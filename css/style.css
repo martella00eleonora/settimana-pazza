@@ -438,3 +438,32 @@ nav.bar button[aria-selected="true"]{color:var(--gold)}
 .jrules li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;font-size:14px}
 .jrules .pill{min-width:40px}
 .who .s{font-family:var(--f-body);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* --- card della classifica --- */
+.row{grid-template-columns:40px 52px minmax(0,1fr) auto;gap:12px;padding:12px 14px 12px 10px;border-radius:18px;position:relative;overflow:hidden}
+.row .av{width:52px;height:52px;box-shadow:0 0 0 2px rgba(243,246,251,.12)}
+.rank{display:grid;justify-items:center;gap:3px}
+.rk{font-family:var(--f-body);font-weight:800;font-size:18px;color:var(--faint)}
+.medal-r{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-body);font-weight:900;font-size:16px;color:var(--night);
+  background:radial-gradient(circle at 35% 30%,#fff8,transparent 45%),var(--mc);box-shadow:0 3px 10px rgba(0,0,0,.35),inset 0 -2px 0 rgba(0,0,0,.2)}
+.medal-r.m1{--mc:var(--gold)} .medal-r.m2{--mc:var(--silver)} .medal-r.m3{--mc:var(--bronze)}
+.mv{font-size:10px;font-weight:800;line-height:1}
+.mv.up{color:var(--bonus)} .mv.down{color:var(--malus)}
+.row.r1{background:linear-gradient(110deg,rgba(240,193,79,.2),rgba(240,193,79,.03) 60%),var(--card);border-color:rgba(240,193,79,.55)}
+.row.r1 .av{box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(240,193,79,.35)}
+.row.r2{background:linear-gradient(110deg,rgba(201,211,223,.12),transparent 60%),var(--card);border-color:rgba(201,211,223,.35)}
+.row.r2 .av{box-shadow:0 0 0 2px var(--silver)}
+.row.r3{background:linear-gradient(110deg,rgba(208,138,82,.14),transparent 60%),var(--card);border-color:rgba(208,138,82,.4)}
+.row.r3 .av{box-shadow:0 0 0 2px var(--bronze)}
+.who .n{display:flex;align-items:center;gap:6px;min-width:0}
+.who .n .role{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;margin-left:2px}
+.who .s{display:flex;gap:6px;margin-top:4px;font-size:12px;color:var(--muted)}
+.bp,.mp{font-weight:800;font-size:12px;padding:1px 8px;border-radius:999px}
+.bp{background:var(--bonus-bg);color:var(--bonus)} .mp{background:var(--malus-bg);color:var(--malus)}
+.tot-w{display:grid;justify-items:end;gap:0}
+.tot-w .tot{font-size:30px;line-height:1}
+.row.r1 .tot{color:var(--gold)}
+.tot-l{font-size:11px;font-weight:700;color:var(--faint);white-space:nowrap}
+.row.r1 .tot-l{color:var(--gold)}
+.who .rl{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:1px}
+.who .s .nope{font-size:12px;color:var(--faint);font-weight:600}

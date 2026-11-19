@@ -204,10 +204,19 @@
     const m = mineOf(p.id);
     return m ? `<span class="mine ${m.delta>=0?"b":"m"}">${m.delta>=0?"Bonus":"Malus"}: ${esc(m.short || m.label)}</span>` : "";
   }
-  const rowHTML = (p, rank, tot, sline, cls) => `<li data-pid="${esc(p.id)}"><button class="row ${cls}" data-open="${esc(p.id)}" aria-label="${esc(p.name)}, ${esc(String(tot))} punti">
-      <span class="rank">${rank}</span>${avatar(p)}
-      <span class="who"><span class="n">${esc(p.name)}${roleTag(p)}</span><span class="s">${sline}</span></span>
-      <span class="tot ${Number(tot) < 0 ? "neg" : ""}" data-tot="${esc(p.id)}">${tot}</span></button></li>`;
+  /* una card della classifica: posizione (medaglia per i primi tre) e freccia da ieri, foto, nome, bonus/malus, totale */
+  const rowHTML = (p, rank, tot, sline, cls, ex = {}) => `<li data-pid="${esc(p.id)}"><button class="row ${cls}" data-open="${esc(p.id)}" aria-label="${esc(p.name)}, ${esc(String(tot))} punti">
+      <span class="rank">${typeof rank === "number" && rank <= 3 ? `<span class="medal-r m${rank}">${rank}</span>` : `<span class="rk">${rank}</span>`}${ex.move ? `<span class="mv ${ex.move > 0 ? "up" : "down"}">${ex.move > 0 ? "▲" : "▼"}${Math.abs(ex.move)}</span>` : ""}</span>${avatar(p)}
+      <span class="who"><span class="n">${esc(p.name)}</span>${p.role ? `<span class="rl">${esc(p.role)}</span>` : ""}<span class="s">${sline}</span></span>
+      <span class="tot-w"><span class="tot ${Number(tot) < 0 ? "neg" : ""}" data-tot="${esc(p.id)}">${tot}</span><span class="tot-l">${ex.lbl ?? "punti"}</span></span></button></li>`;
+  /* posizioni contando solo alcuni punti (es. fino a ieri) */
+  function rankAt(filter){
+    const t = {}; for (const p of S.players) t[p.id] = 0;
+    for (const e of allPoints()) if (t[e.playerId] != null && filter(e)) t[e.playerId] += Number(e.delta) || 0;
+    const r = {}; let rank = 0, prev = null;
+    Object.entries(t).sort((a,b) => b[1] - a[1]).forEach(([id, v], k) => { if (v !== prev){ rank = k + 1; prev = v; } r[id] = rank; });
+    return r;
+  }
 
   function renderPodium(list){
     if (list.length < 3 || !S.points.length){
@@ -234,8 +243,6 @@
     const top = Object.entries(sum).sort((a,b) => b[1]-a[1]).slice(0,3);
     const worst = Object.entries(mal).sort((a,b) => b[1]-a[1])[0];
     const ele = pts.filter(e => e.auto).length, jol = pts.filter(e => e.jolly).length;
-    const rankAt = filter => { const t = {}; for (const p of S.players) t[p.id] = 0; for (const e of allPoints()) if (t[e.playerId] != null && filter(e)) t[e.playerId] += Number(e.delta)||0;
-      const l = Object.entries(t).sort((a,b) => b[1]-a[1]); const r = {}; let rank = 0, prev = null; l.forEach(([id,v],k) => { if (v !== prev){ rank = k+1; prev = v; } r[id] = rank; }); return r; };
     const before = rankAt(e => dayOf(e) < y), after = rankAt(e => dayOf(e) <= y);
     const climb = S.players.map(p => [p, before[p.id] - after[p.id]]).sort((a,b) => b[1]-a[1])[0];
     return `<div class="recap"><div class="rh"><div><div class="lbl" style="margin:0">Ieri in breve</div><b>${esc(dayLabel(y))}</b></div><button class="btn ghost small" data-recapx="${y}" type="button">Chiudi</button></div>
@@ -253,7 +260,7 @@
     if (S.boardMode === "day"){ renderDayBoard(); return; }
     if (hidden()){
       $("podium").innerHTML = `<div class="covered"><div class="q" aria-hidden="true">??</div><b>Classifica coperta</b><p>Dal 26 dicembre i punti li vede solo l'admin. Si scopre tutto il 28 a mezzanotte, con la chiusura ufficiale.</p></div>`;
-      $("board").innerHTML = [...S.players].sort((a,b) => a.name.localeCompare(b.name)).map(p => rowHTML(p, "?", "??", "punti coperti", "")).join("");
+      $("board").innerHTML = [...S.players].sort((a,b) => a.name.localeCompare(b.name)).map(p => rowHTML(p, "?", "??", "punti coperti", "", {lbl:"coperti"})).join("");
       return;
     }
     const list = ranked();
@@ -262,10 +269,11 @@
     const before = {};
     if (!reduce) $("board").querySelectorAll("[data-pid]").forEach(el => before[el.dataset.pid] = el.getBoundingClientRect().top);
     const stag = S.stagger; S.stagger = false;
-    $("board").innerHTML = list.map(({p, r, rank}) => {
-      const mt = mineTag(p);
-      return rowHTML(p, rank, r.tot, `<span class="b">${r.bon ? sign(r.bon) : "+0"}</span> · <span class="m">${r.mal ? sign(r.mal) : "−0"}</span>`, "r" + rank);
-    }).join("");
+    const di = DAYS.indexOf(currentDay()), yRank = live() && di > 0 ? rankAt(e => dayOf(e) < currentDay()) : null;
+    const top = list[0].r.tot;
+    $("board").innerHTML = list.map(({p, r, rank}) => rowHTML(p, rank, r.tot,
+      (r.bon || r.mal) ? `${r.bon ? `<span class="bp">${sign(r.bon)}</span>` : ""}${r.mal ? `<span class="mp">${sign(r.mal)}</span>` : ""}` : `<span class="nope">nessun punto</span>`,
+      "r" + rank, {move: yRank ? yRank[p.id] - rank : 0, lbl: rank === 1 ? (top > 0 ? "in testa" : "punti") : `−${top - r.tot} dal 1°`})).join("");
     list.forEach(({p, r}, i) => {
       const el = $("board").querySelector(`[data-pid="${CSS.escape(p.id)}"]`);
       if (stag){ el.style.setProperty("--i", i); el.classList.add("stagger"); }
@@ -289,7 +297,7 @@
     const list = [...S.players].sort((a,b) => t[b.id] - t[a.id] || a.name.localeCompare(b.name));
     let rank = 0, prev = null;
     $("board").innerHTML = list.map((p,i) => { if (t[p.id] !== prev){ rank = i + 1; prev = t[p.id]; }
-      return rowHTML(p, rank, t[p.id] > 0 ? "+" + t[p.id] : t[p.id], `nella giornata di ${esc(wdShort(S.boardDay))} ${dt(S.boardDay).getDate()}`, "r" + rank); }).join("");
+      return rowHTML(p, rank, t[p.id] > 0 ? "+" + t[p.id] : t[p.id], `nella giornata di ${esc(wdShort(S.boardDay))} ${dt(S.boardDay).getDate()}`, "r" + rank, {lbl:"in giornata"}); }).join("");
   }
 
   /* ---------- programma ---------- */
