@@ -44,14 +44,14 @@ const SEED = {
 const PHOTOS = {
   "g0": "foto/profili/bardy.jpg",
   "g1": "foto/profili/mg.jpg",
-  "g2": "foto/profili/ele.jpg",
-  "g3": "foto/profili/coronaus.jpg",
+  "g2": "foto/profili/ele-2.jpg",
+  "g3": "foto/profili/coronaus-2.jpg",
   "g4": "foto/profili/cri.jpg",
   "g5": "foto/profili/mary.jpg",
   "g6": "foto/profili/antonio.jpg",
   "g7": "foto/profili/fede.jpg",
   "g8": "foto/profili/andrea.jpg",
-  "g10": "foto/profili/laura.jpg",
+  "g10": "foto/profili/laura-2.jpg",
   "g11": "foto/profili/jacopo.jpg",
   "g9": "foto/profili/giorgio.jpg"
 };
