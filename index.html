@@ -10,6 +10,9 @@
 </head>
 <body>
 
+<button class="adm-fab" id="adm-fab" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12 20 3M16 7l3 3M14 9l2 2"/></svg><span id="adm-fab-t">Admin</span></button>
+<div class="pg-bar" id="pg-bar" hidden><div class="wrap"><b>Prova generale</b> · <span id="pg-txt"></span></div></div>
+
 <div class="lights" aria-hidden="true">
   <svg class="wire" viewBox="0 0 100 42" preserveAspectRatio="none"><path d="M0 6 Q 12.5 20 25 6 T 50 6 T 75 6 T 100 6" stroke="#33475e" stroke-width="0.6" fill="none" vector-effect="non-scaling-stroke"/></svg>
   <div class="bulbs" id="bulbs"></div>
@@ -22,16 +25,6 @@
     <h1>Settimana<br>Pazza</h1>
     <div class="script">Winter Edition</div>
     <div id="count"></div>
-    <div class="modebar">
-      <span id="mode-label"></span>
-      <button class="btn ghost small" id="mode-btn" type="button"></button>
-      <select id="trial-sel" class="admin-only" aria-label="Prova una giornata"></select>
-      <form id="f-pin" hidden>
-        <input type="email" id="in-email" autocomplete="username" placeholder="Email admin" aria-label="Email admin" hidden>
-        <input type="password" id="in-pin" inputmode="numeric" maxlength="64" autocomplete="off" aria-label="PIN admin">
-        <button class="btn small gold" type="submit" id="pin-go">Entra</button>
-      </form>
-    </div>
   </div>
 </header>
 <div class="knit" aria-hidden="true"></div>
@@ -87,6 +80,26 @@
   </div>
 </nav>
 
+<div class="scrim" id="adm-panel" hidden>
+  <div class="sheet adm-sheet" role="dialog" aria-modal="true" aria-labelledby="adm-t">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="adm-head"><span class="adm-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12 20 3M16 7l3 3M14 9l2 2"/></svg></span><div><h3 id="adm-t">Area admin</h3><p id="mode-label"></p></div></div>
+    <form id="f-pin" class="adm-form">
+      <input type="email" id="in-email" autocomplete="username" placeholder="Email admin" aria-label="Email admin" hidden>
+      <input type="password" id="in-pin" inputmode="numeric" maxlength="64" autocomplete="current-password" aria-label="PIN o password admin">
+      <button class="btn gold" type="submit" id="pin-go">Entra</button>
+    </form>
+    <div id="adm-tools" class="adm-tools" hidden>
+      <div><div class="lbl">Prova una giornata</div><select id="trial-sel" aria-label="Prova una giornata"></select>
+        <p class="adm-note">Simula una giornata della settimana. I punti di prova li vedi solo tu e si cancellano quando esci dalla prova.</p></div>
+      <div id="pg-tools" hidden><div class="lbl">Prova generale</div>
+        <p class="adm-note" id="pg-note"></p>
+        <button class="btn danger" id="pg-clean" type="button">Cancella i dati della prova generale</button></div>
+      <button class="btn ghost" id="mode-btn" type="button">Esci da admin</button>
+    </div>
+    <div class="sh-foot"><span></span><button class="btn ghost" id="adm-close" type="button">Chiudi</button></div>
+  </div>
+</div>
 <div id="sheet-root"></div>
 <div id="toast-root"></div>
 

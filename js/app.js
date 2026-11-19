@@ -7,6 +7,11 @@
   const lsGet = k => { try { return localStorage.getItem(k); } catch(_){ return null; } };
   const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(_){} };
 
+  /* ---------- orologio ----------
+     NOW() è l'ora dell'app: quella vera, spostata in avanti durante la prova generale (js/config.js). */
+  const SHIFT_PROVA = (typeof PROVA_GENERALE_GIORNI === "number" ? PROVA_GENERALE_GIORNI : 0) * 86400000;
+  const NOW = () => Date.now() + SHIFT_PROVA;
+
   /* ---------- calendario ---------- */
   const DAYS = ["2026-12-21","2026-12-22","2026-12-23","2026-12-24","2026-12-25","2026-12-26","2026-12-27"];
   const DAYNAME = {"2026-12-21":"Si parte","2026-12-24":"Vigilia","2026-12-25":"Natale","2026-12-26":"Festa nazionale","2026-12-27":"Gran finale"};
@@ -60,20 +65,20 @@
      La serata cambia alle 6 del mattino: alle 2 di notte di martedì si gioca ancora la serata di lunedì. */
   const SHIFT = 6 * 3600 * 1000;
   const serataOf = ts => iso(new Date(ts - SHIFT));
-  const currentDay = () => (S.trial && DAYS.includes(S.trial)) ? S.trial : serataOf(Date.now());
-  const live = () => (S.trial && Date.now() < END && !revealed()) ? DAYS.includes(S.trial) : (DAYS.includes(currentDay()) && Date.now() < END);
+  const currentDay = () => (S.trial && DAYS.includes(S.trial)) ? S.trial : serataOf(NOW());
+  const live = () => (S.trial && NOW() < END && !revealed()) ? DAYS.includes(S.trial) : (DAYS.includes(currentDay()) && NOW() < END);
   /* Dal 26 (alle 6) la classifica è coperta per chi non è admin, fino a quando il Direttivo la svela */
   const COVER_FROM = new Date(2026, 11, 26, 6, 0, 0), CERT_DAY = "2026-12-27";
   const revealed = () => !!S.settings.find(x => x.id === "main")?.revealed;
-  const covered = () => !revealed() && (S.trial ? S.trial >= "2026-12-26" : Date.now() >= COVER_FROM.getTime());
+  const covered = () => !revealed() && (S.trial ? S.trial >= "2026-12-26" : NOW() >= COVER_FROM.getTime());
   const hidden = () => covered() && !S.admin;
   const hiddenDay = d => hidden() && d >= "2026-12-26";
   /* Il 27: fino alle 23 si assegnano i punti, dalle 23 a mezzanotte solo i certificati.
      In modalità prova sul 27 sono aperti tutti e due, perché la prova non simula l'ora. */
   const CERT_FROM = new Date(2026, 11, 27, 23, 0, 0);
-  const certHour = () => !S.trial && Date.now() >= CERT_FROM.getTime();
+  const certHour = () => !S.trial && NOW() >= CERT_FROM.getTime();
   const assignOpen = () => live() && !certHour();
-  const frozen = () => revealed() || Date.now() >= END.getTime();   // dopo mezzanotte, e dopo la cerimonia, si può solo guardare
+  const frozen = () => revealed() || NOW() >= END.getTime();   // dopo mezzanotte, e dopo la cerimonia, si può solo guardare
   const certOpen = () => live() && currentDay() === CERT_DAY && (S.trial || certHour());
   const dayOf = e => e.day || serataOf(e.at || 0);
   const JOLLY = "Jolly presidenziale · ";
@@ -141,7 +146,7 @@
   const ornaments = td => { const i = DAYS.indexOf(td);
     return `<div class="orn" aria-label="Giornata ${i + 1} di 7">${DAYS.map((d,k) => `<span class="o ${k < i ? "done" : k === i ? "now" : ""}" style="--k:${k}"><i></i><b>${dt(d).getDate()}</b></span>`).join("")}</div>`; };
   function renderCount(){
-    const now = new Date();
+    const now = new Date(NOW());
     let html;
     if (S.trial){
       const a = actsOf(currentDay());
@@ -173,14 +178,23 @@
   /* ---------- modalità ---------- */
   function renderMode(){
     document.body.classList.toggle("viewer", !S.admin);
-    $("mode-label").innerHTML = S.admin ? "Sei in <b>modalità admin</b>" : "Modalità spettatore";
-    $("mode-btn").textContent = S.admin ? "Esci da admin" : "Entra come admin";
-    $("mode-btn").hidden = pinOpen; $("f-pin").hidden = !pinOpen;
+    $("adm-fab").classList.toggle("on", S.admin);
+    $("adm-fab-t").textContent = S.admin ? "Admin attivo" : "Admin";
+    $("mode-label").textContent = S.admin ? "Sei dentro: puoi segnare punti, provare le giornate e, a fine settimana, svelare il vincitore."
+      : S.online ? "Entra con email e password dell'admin. Chi guarda e basta non ha bisogno di entrare." : "Inserisci il PIN dell'admin. La prima volta lo scegli tu.";
+    $("f-pin").hidden = S.admin; $("adm-tools").hidden = !S.admin;
+    $("pg-bar").hidden = !SHIFT_PROVA;
+    if (SHIFT_PROVA){
+      const fmt = new Intl.DateTimeFormat("it-IT", {weekday:"long", day:"numeric", month:"long"});
+      $("pg-txt").textContent = `oggi, ${fmt.format(new Date())}, nell'app vale come ${fmt.format(new Date(NOW()))}`;
+      $("pg-note").textContent = "Durante la prova generale i punti sono veri e li vedono tutti. Finita la prova, cancellali da qui prima del 21 dicembre.";
+    }
+    $("pg-tools").hidden = !SHIFT_PROVA;
     $("in-email").hidden = !S.online;
     $("in-pin").inputMode = S.online ? "text" : "numeric";
     $("in-pin").placeholder = S.online ? "Password" : lsGet("sp-pin") ? "PIN admin" : "Scegli un PIN";
     $("pin-go").textContent = S.online ? "Accedi" : lsGet("sp-pin") ? "Entra" : "Imposta";
-    $("trial-sel").hidden = frozen();
+    $("trial-sel").parentElement.hidden = frozen();
     $("trial-sel").innerHTML = `<option value="">Prova una giornata…</option>` + DAYS.map(d => `<option value="${d}" ${d===S.trial?"selected":""}>${esc(wdShort(d))} ${dt(d).getDate()}</option>`).join("") + `<option value="closing">Prova la chiusura del 28</option>`;
     $("cert-btn").hidden = !certOpen();
     $("trial-bar").hidden = !S.trial;
@@ -190,7 +204,7 @@
     $("hint-board").textContent = !S.admin ? (beforeStart() ? "La Settimana Pazza si apre lunedì 21 dicembre: da lì parte la classifica." : hidden() ? "Tocca un nome per vedere i bonus e malus presi fino al 25." : "Tocca un nome per vedere i bonus e malus che ha preso.")
       : live() && !assignOpen() ? "Sono le 23: ora si consegnano solo i certificati. A mezzanotte la chiusura ufficiale."
       : live() ? `Giornata in corso: ${dayLabel(currentDay())}. Tocca un nome o assegna a più persone insieme.${covered() ? " La classifica è coperta: i punti li vedi solo tu." : ""}`
-      : new Date() < START ? "Le assegnazioni si aprono lunedì 21 dicembre. Per provare ora usa «Prova una giornata»." : "La settimana è finita: le assegnazioni sono chiuse.";
+      : new Date(NOW()) < START ? "Le assegnazioni si aprono lunedì 21 dicembre." : "La settimana è finita: le assegnazioni sono chiuse.";
   }
 
   /* ---------- classifica ---------- */
@@ -286,7 +300,7 @@
     });
   }
   function renderDayBoard(){
-    const started = live() || Date.now() >= END;
+    const started = live() || NOW() >= END;
     const days = started ? DAYS.filter(d => !live() || d <= currentDay()) : [];
     if (!days.length){ $("podium").innerHTML = ""; $("board").innerHTML = `<li class="empty">La classifica di giornata parte lunedì 21.</li>`; return; }
     if (!days.includes(S.boardDay)) S.boardDay = days[days.length - 1];
@@ -303,7 +317,7 @@
   /* ---------- programma ---------- */
   const whoList = (who, day) => hiddenDay(day) ? `<span class="none">?? · si scopre il 28</span>`
     : who.length ? who.map(p => `<span class="mini" style="--pc:${colorOf(p)}" title="${esc(p.name)}">${esc(p.name)}</span>`).join("") : `<span class="none">Ancora nessuno</span>`;
-  const beforeStart = () => !S.trial && Date.now() < START.getTime();
+  const beforeStart = () => !S.trial && NOW() < START.getTime();
   function renderDays(){
     if (beforeStart() && !S.admin){
       $("days").innerHTML = "";
@@ -416,7 +430,7 @@
     ${p.role === "Presidente" ? `<div class="mine-card j"><span class="pill jp">J</span><span>È lui il Jolly presidenziale</span></div>`
       : m ? `<div class="mine-card ${m.delta>=0?"b":"m"}"><span class="pill ${m.delta>=0?"b":"m"}">${sign(m.delta)}</span><span>Il suo ${m.delta>=0?"bonus":"malus"}: ${esc(m.label)}</span></div>` : ""}`; };
   const serataPill = () => `<div class="serata"><span class="dot"></span>Oggi · <b>${esc(dayLabel(currentDay()))}</b>${S.trial ? " · prova" : ""}</div>`;
-  const closedNote = () => `<p class="closed">${new Date() < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre. Per provarle adesso usa «Prova una giornata» in alto." : live() ? "Sono le 23: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
+  const closedNote = () => `<p class="closed">${new Date(NOW()) < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre." : live() ? "Sono le 23: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
 
   /* chip di un bonus/malus: disattivato se automatico o se è da 1 volta e la persona l'ha già preso stasera */
   function itemChip(it, attr, pid){
@@ -521,7 +535,7 @@
     for (const pid of pids){
       if (it.once && takenTonight(pid, it.label)) continue;
       const ref = db.collection("points").doc();
-      const ok = await write(() => ref.set({playerId:pid, delta:it.delta, reason:it.label, activityId:it.activityId || "", day:currentDay(), at:Date.now(), ...(S.trial ? {trial:true} : {})}));
+      const ok = await write(() => ref.set({playerId:pid, delta:it.delta, reason:it.label, activityId:it.activityId || "", day:currentDay(), at:NOW(), ...(S.trial ? {trial:true} : {})}));
       if (!ok) break;
       refs.push(ref);
       if (it.delta < 0 && malusTonight(pid) === 2) eleFor.push(player(pid).name);
@@ -557,7 +571,7 @@
         done.push({name, txt:"+1", undo: () => write(() => db.doc("points/" + ev.id).update(before))});
       } else {
         const ref = db.collection("points").doc();
-        if (!(await write(() => ref.set({playerId:pid, delta:2, reason:JOLLY + "nessun malus (+2)", jolly:true, plus2:true, activityId:"", day:currentDay(), at:Date.now(), ...(S.trial ? {trial:true} : {})})))) break;
+        if (!(await write(() => ref.set({playerId:pid, delta:2, reason:JOLLY + "nessun malus (+2)", jolly:true, plus2:true, activityId:"", day:currentDay(), at:NOW(), ...(S.trial ? {trial:true} : {})})))) break;
         done.push({name, txt:"+2", undo: () => write(() => ref.delete())});
       }
     }
@@ -616,7 +630,7 @@
     const label = "Certificato · " + name;
     if (certsOf(CERT_DAY).some(x => x.label.toLowerCase() === label.toLowerCase())){ toast("Esiste già un certificato con questo nome.", null, true); return; }
     const ref = db.collection("extras").doc();
-    if (!(await write(() => ref.set({type:"cert", day:CERT_DAY, label, delta:1, once:true, createdAt:Date.now(), ...(S.trial ? {trial:true} : {})})))) return;
+    if (!(await write(() => ref.set({type:"cert", day:CERT_DAY, label, delta:1, once:true, createdAt:NOW(), ...(S.trial ? {trial:true} : {})})))) return;
     const {refs} = await savePoints([...c.sel], {label, delta:1, once:true, activityId:"premi"});
     burst($("ce-go"), true, true);
     const names = [...c.sel].map(id => player(id).name).join(", ");
@@ -679,7 +693,7 @@
           <button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button>`
           : cer.remote ? `<p class="count-cap">Il Direttivo sta per svelare il prossimo posto…</p>`
           : `<button class="btn gold big" data-cer="next" type="button">Svela ${order[st] === 1 ? "il vincitore" : "il " + order[st] + "° posto"}</button>`}`;
-      if (isLast){ fireworks.intense = true; if (!cer.trial && !cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:Date.now()})); }
+      if (isLast){ fireworks.intense = true; if (!cer.trial && !cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()})); }
     }
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
@@ -819,7 +833,8 @@
     if (jo){ if (jo.dataset.state === "used"){ warnTaken(sheet.playerId, "jolly"); return; } const pid = sheet.playerId; armOrRun(jo, () => jollyMany([pid], jo)); return; }
   });
   document.addEventListener("change", e => {
-    if (e.target.id === "trial-sel" && e.target.value === "closing"){ e.target.value = S.trial || ""; openCeremony(true); return; }
+    if (e.target.id === "trial-sel" && e.target.value === "closing"){ e.target.value = S.trial || ""; closeAdm(); openCeremony(true); return; }
+    if (e.target.id === "trial-sel") closeAdm();
     if (e.target.id === "trial-sel" && e.target.value) setTrial(e.target.value);
   });
   document.addEventListener("submit", e => { if (e.target.id === "f-cert" && sheet?.cert){ e.preventDefault(); giveCert(); } });
@@ -830,22 +845,33 @@
     if (!label){ toast("Scrivi il nome della mini-sfida."); return; }
     if (itemsTonight().some(x => x.label.toLowerCase() === label.toLowerCase())){ toast("Esiste già una regola con questo nome oggi."); return; }
     const ref = db.collection("extras").doc();
-    const ok = await write(() => ref.set({day:currentDay(), label, delta:m.qDelta, once:true, createdAt:Date.now(), ...(S.trial ? {trial:true} : {})}));
+    const ok = await write(() => ref.set({day:currentDay(), label, delta:m.qDelta, once:true, createdAt:NOW(), ...(S.trial ? {trial:true} : {})}));
     if (!ok) return;
     m.key = "x:" + ref.id; $("q-label").value = ""; $("mu-quick").open = false; refreshSheet();
     toast(`Mini-sfida creata: ${sign(m.qDelta)} · ${label}. Ora tocca le persone.`);
   });
-  document.addEventListener("keydown", e => { if (e.key === "Escape"){ if (cer) closeCeremony(); else if (sheet) closeSheet(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape"){ if (cer) closeCeremony(); else if (!$("adm-panel").hidden) closeAdm(); else if (sheet) closeSheet(); } });
   $("flt").addEventListener("change", e => { S.filter = e.target.value; renderLog(); });
   $("mode-btn").addEventListener("click", async () => {
     if (S.admin){
       if (S.trial) await setTrial(null);
       S.admin = false; lsSet("sp-admin", null); closeSheet();
       if (S.online) db.auth.signOut().then(() => db.loadAll()).catch(() => {});
-      render(); return;
+      closeAdm(); render(); return;
     }
-    pinOpen = true; renderMode(); $("in-pin").value = ""; (S.online ? $("in-email") : $("in-pin")).focus();
   });
+  /* area admin: si apre dal pulsante in alto a destra */
+  function openAdm(){ $("adm-panel").hidden = false; renderMode(); if (!S.admin){ $("in-pin").value = ""; setTimeout(() => (S.online ? $("in-email") : $("in-pin")).focus(), 50); } }
+  function closeAdm(){ $("adm-panel").hidden = true; }
+  $("adm-fab").addEventListener("click", openAdm);
+  $("adm-close").addEventListener("click", closeAdm);
+  $("adm-panel").addEventListener("click", e => { if (e.target.id === "adm-panel") closeAdm(); });
+  /* cancella punti, mini-sfide, certificati e cerimonia della prova generale */
+  $("pg-clean").addEventListener("click", e => armOrRun(e.currentTarget, async () => {
+    const all = [...S.points.map(x => "points/" + x.id), ...S.extras.map(x => "extras/" + x.id), ...(S.settings.some(x => x.id === "main") ? ["settings/main"] : [])];
+    for (const path of all) await write(() => db.doc(path).delete());
+    closeAdm(); toast(`Prova generale cancellata: ${all.length} voci tolte.`);
+  }));
   $("f-pin").addEventListener("submit", async e => {
     e.preventDefault();
     if (S.online){
@@ -854,7 +880,7 @@
       try { await db.auth.signIn(email, pass); }
       catch(_){ toast("Email o password sbagliate.", null, true); $("in-pin").value = ""; return; }
       if (!(await db.auth.isAdmin())){ await db.auth.signOut(); toast("Questo account non è tra gli admin.", null, true); return; }
-      S.admin = true; pinOpen = false; $("in-pin").value = "";
+      S.admin = true; pinOpen = false; $("in-pin").value = ""; closeAdm();
       await db.loadAll().catch(() => {});
       await seedIfEmpty(); await cleanTrial();
       render(); toast("Accesso admin fatto."); return;
@@ -863,15 +889,15 @@
     if (v.length < 4){ toast("Il PIN deve avere almeno 4 cifre."); return; }
     if (saved && v !== saved){ toast("PIN sbagliato."); $("in-pin").value = ""; return; }
     if (!saved){ lsSet("sp-pin", v); toast("PIN impostato. Ricordatelo: serve per tornare admin."); }
-    S.admin = true; lsSet("sp-admin", "1"); pinOpen = false; render();
+    S.admin = true; lsSet("sp-admin", "1"); pinOpen = false; closeAdm(); render();
   });
 
   /* il cambio di serata alle 6 del mattino aggiorna la pagina da solo */
   /* cambi di fase: nuova giornata alle 6, solo certificati alle 23 del 27, chiusura a mezzanotte */
-  const phase = () => [currentDay(), certHour(), Date.now() >= END.getTime()].join("|");
+  const phase = () => [currentDay(), certHour(), NOW() >= END.getTime()].join("|");
   let lastPhase = phase(), lastDay = currentDay();
   /* se a mezzanotte era rimasta attiva la prova, la chiude e cancella i punti di prova */
-  const endTrialIfClosed = () => { if (db && S.trial && (Date.now() >= END.getTime() || revealed())) setTrial(null); };
+  const endTrialIfClosed = () => { if (db && S.trial && (NOW() >= END.getTime() || revealed())) setTrial(null); };
   setTimeout(endTrialIfClosed, 0);
   setInterval(() => { endTrialIfClosed(); const ph = phase(); if (ph !== lastPhase){ lastPhase = ph; if (currentDay() !== lastDay){ lastDay = currentDay(); S.day = null; } closeSheet(); render(); } }, 30000);
 
