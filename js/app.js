@@ -855,7 +855,7 @@
     toast("Database online preparato con giocatori, programma e bonus/malus.");
   }
   const loadScript = src => new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
-  const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+  const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js";
   async function start(){
     renderMode();
     if (typeof SUPABASE_URL === "string" && SUPABASE_URL && SUPABASE_ANON_KEY){
