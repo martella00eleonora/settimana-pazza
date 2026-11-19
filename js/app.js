@@ -375,7 +375,7 @@
     const row = p => { const o = player(p.owner), name = p.label.split(" · ")[0];
       return `<li class="bm ${p.delta >= 0 ? "b" : "m"}">
         ${o ? avatar(o, "bm-av") : `<span class="av bm-av" style="--pc:var(--card-2)">${p.delta >= 0 ? "+" : "−"}</span>`}
-        <span class="bm-t"><span class="bm-k">${esc(name)}${o && !name.toLowerCase().includes(o.name.toLowerCase()) ? ` <span class="bm-o">di ${esc(o.name)}</span>` : ""}</span><b>${esc(cap(p.short || p.label))}</b>${kind(p)}</span>
+        <span class="bm-t"><span class="bm-k">${esc(name)}</span><b>${esc(cap(p.short || p.label))}</b>${kind(p)}</span>
         <span class="bm-v">${sign(p.delta)}</span></li>`; };
     const sorted = [...S.presets].sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
     const b = sorted.filter(p => p.delta >= 0), m = sorted.filter(p => p.delta < 0);
