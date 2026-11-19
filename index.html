@@ -27,7 +27,7 @@
     <div id="count"></div>
   </div>
 </header>
-<div class="knit" aria-hidden="true"></div>
+<div class="garland" aria-hidden="true"><div class="g-pine"></div><div class="g-lights"></div></div>
 <div class="trial-bar admin-only" id="trial-bar" hidden><div class="wrap"><span><b>Modalità prova</b> · giornata di <span id="trial-day"></span>. I punti di prova si cancellano quando esci.</span><button class="btn small gold" id="trial-exit" type="button">Esci dalla prova</button></div></div>
 
 <main class="wrap">
@@ -48,9 +48,12 @@
   </section>
 
   <section class="view" id="v-storico" hidden>
-    <div class="vh"><h2>Storico</h2><p>Ogni bonus e malus assegnato, dal più recente.</p></div>
-    <select id="flt" aria-label="Filtra per giocatore"></select>
-    <ul class="log" id="log"></ul>
+    <div class="vh"><h2>Storico</h2><p>Ogni bonus e malus assegnato, giornata per giornata.</p></div>
+    <div class="lfilters">
+      <div><div class="lbl">Giornata</div><div class="lchips" id="log-days" role="group" aria-label="Filtra per giornata"></div></div>
+      <div><div class="lbl">Persona</div><div class="pchips" id="log-people" role="group" aria-label="Filtra per persona"></div></div>
+    </div>
+    <div class="log" id="log"></div>
   </section>
 
   <section class="view" id="v-regole" hidden>

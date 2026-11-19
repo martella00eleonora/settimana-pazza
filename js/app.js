@@ -380,29 +380,57 @@
   }
 
   /* ---------- storico ---------- */
+  /* Storico: filtri per giornata e per persona, voci raggruppate per giornata */
   function renderLog(){
-    const f = $("flt"), cur = S.filter;
-    f.innerHTML = `<option value="">Tutti i giocatori</option>` + [...S.players].sort((a,b)=>a.name.localeCompare(b.name)).map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
-    f.value = player(cur) ? cur : "";
-    let evs = [...allPoints().filter(e => !f.value || e.playerId === f.value),
-      ...(f.value ? [] : S.extras.filter(x => x.type !== "cert").map(x => ({id:x.id, extra:true, label:x.label, delta:Number(x.delta), day:x.day, at:x.createdAt, trial:x.trial})))];
-    const nHidden = evs.filter(e => hiddenDay(dayOf(e))).length;
-    evs = evs.filter(e => !hiddenDay(dayOf(e))).sort((a,b) => (b.at||0) - (a.at||0));
-    const isMini = e => !e.activityId && S.extras.some(x => x.type !== "cert" && x.day === dayOf(e) && x.label === baseReason(e));
-    const coveredRow = (nHidden || (S.online && hidden())) ? `<li class="ev"><span class="pill" style="background:var(--card-2);color:var(--muted)">??</span><span class="t"><span class="l1">Dal 26 dicembre lo storico è coperto</span><span class="l2">${nHidden ? `${nHidden} ${nHidden === 1 ? "voce si scopre" : "voci si scoprono"}` : "Le voci dal 26 si scoprono"} il 28 a mezzanotte</span></span><span></span></li>` : "";
-    if (!evs.length){ $("log").innerHTML = coveredRow || `<li class="empty">Nessun punto assegnato finora.</li>`; return; }
+    if (!player(S.filter)) S.filter = "";
+    if (S.logDay && !DAYS.includes(S.logDay)) S.logDay = "";
+    const fp = S.filter, fd = S.logDay;
+    const all = [...allPoints().map(e => ({...e})),
+      ...S.extras.filter(x => x.type !== "cert").map(x => ({id:x.id, extra:true, label:x.label, delta:Number(x.delta), day:x.day, at:x.createdAt, trial:x.trial}))];
+    const visible = all.filter(e => !hiddenDay(dayOf(e)));
+    const count = d => visible.filter(e => !e.extra && dayOf(e) === d && (!fp || e.playerId === fp)).length;
+    $("log-days").innerHTML = `<button type="button" class="lchip" data-lday="" aria-pressed="${!fd}">Tutte</button>` + DAYS.map(d => {
+      const n = count(d), cov = hiddenDay(d);
+      return `<button type="button" class="lchip ${n || cov ? "" : "zero"}" data-lday="${d}" aria-pressed="${fd === d}"><span class="wd">${esc(wdShort(d))}</span><b>${dt(d).getDate()}</b>${cov ? `<span class="cnt">??</span>` : n ? `<span class="cnt">${n}</span>` : ""}</button>`;
+    }).join("");
+    $("log-people").innerHTML = `<button type="button" class="pchip all" data-lpl="" aria-pressed="${!fp}"><span class="av">★</span><span>Tutti</span></button>`
+      + [...S.players].sort((a,b) => a.name.localeCompare(b.name)).map(p => `<button type="button" class="pchip" data-lpl="${esc(p.id)}" aria-pressed="${fp === p.id}">${avatar(p)}<span>${esc(p.name)}</span></button>`).join("");
+    const hiddenSel = fd && hiddenDay(fd);
+    let evs = visible.filter(e => (!fp || (!e.extra && e.playerId === fp)) && (!fd || dayOf(e) === fd));
+    const nHidden = all.filter(e => hiddenDay(dayOf(e)) && (!fp || e.playerId === fp) && (!fd || dayOf(e) === fd)).length;
+    const coveredBox = (hiddenSel || (!fd && (nHidden || (S.online && hidden())))) ? `<div class="lcover"><span class="q">??</span><div><b>${hiddenSel ? "Giornata coperta" : "Dal 26 dicembre lo storico è coperto"}</b><span>${nHidden ? `${nHidden} ${nHidden === 1 ? "voce si scopre" : "voci si scoprono"}` : "Le voci si scoprono"} il 28 a mezzanotte</span></div></div>` : "";
+    if (!evs.length){
+      $("log").innerHTML = coveredBox || `<div class="lempty"><span aria-hidden="true">❄</span><b>Niente da mostrare</b><p>${fd || fp ? "Nessun bonus o malus con questi filtri." : "Nessun punto assegnato finora."}</p></div>`;
+      return;
+    }
     const fmt = new Intl.DateTimeFormat("it-IT", {hour:"2-digit", minute:"2-digit"});
     const cd = currentDay();
-    $("log").innerHTML = coveredRow + evs.map(e => {
-      if (e.extra) return `<li class="ev newmini"><span class="pill nw">nuova</span>
-        <span class="t"><span class="l1">Mini-sfida creata · ${esc(e.label)} <span class="pill ${e.delta>=0?"b":"m"}" style="min-width:0">${sign(e.delta)}</span></span><span class="l2">${esc(wdShort(e.day))} ${dt(e.day).getDate()}${e.at ? " · " + esc(fmt.format(new Date(e.at))) : ""} · 1 al giorno${e.trial ? " · prova" : ""}</span></span>
-        <span class="r admin-only">${frozen() ? "" : `<button class="btn danger small" data-del="extras/${esc(e.id)}">Elimina</button>`}</span></li>`;
-      const p = player(e.playerId), a = S.activities.find(x => x.id === e.activityId), d = Number(e.delta)||0, dd = dayOf(e);
+    const isMini = e => !e.activityId && S.extras.some(x => x.type !== "cert" && x.day === dayOf(e) && x.label === baseReason(e));
+    const groups = {};
+    for (const e of evs) (groups[dayOf(e)] = groups[dayOf(e)] || []).push(e);
+    const item = e => {
+      const time = e.at ? esc(fmt.format(new Date(e.at))) : "";
+      if (e.extra) return `<li class="lev mini"><span class="lic" aria-hidden="true">✦</span>
+        <span class="lt"><b>Nuova mini-sfida</b><span class="lr">${esc(e.label)} · 1 al giorno${e.trial ? " · prova" : ""}</span></span>
+        <span class="lside"><span class="lpt ${e.delta >= 0 ? "b" : "m"}">${sign(e.delta)}</span><span class="ltime">${time}</span></span>
+        ${frozen() ? "" : `<span class="lact admin-only"><button class="btn danger small" data-del="extras/${esc(e.id)}">Elimina</button></span>`}</li>`;
+      const p = player(e.playerId), a = S.activities.find(x => x.id === e.activityId), d = Number(e.delta) || 0, dd = dayOf(e);
       const canJolly = assignOpen() && dd === cd && d < 0 && !e.auto && !jollyToday(e.playerId);
-      const tag = (e.reason || "").startsWith("Certificato · ") ? " · certificato" : isMini(e) ? " · mini-sfida" : "";
-      return `<li class="ev"><span class="pill ${d>=0?"b":"m"}">${sign(d)}</span>
-        <span class="t"><span class="l1">${esc(p ? p.name : "Giocatore rimosso")} · ${esc(e.reason || (d>=0 ? "Bonus" : "Malus"))}</span><span class="l2">${esc(wdShort(dd))} ${dt(dd).getDate()}${e.at ? " · " + esc(fmt.format(new Date(e.at))) : ""}${a && !tag ? " · " + esc(a.title) : ""}${tag}${e.trial ? " · prova" : ""}</span></span>
-        <span class="r admin-only">${frozen() ? "" : e.auto ? `<span class="pill" style="background:var(--card-2);color:var(--muted)">auto</span>` : `${canJolly ? `<button class="btn jolly small" data-jolly="${esc(e.id)}">Jolly</button>` : ""}<button class="btn danger small" data-del="points/${esc(e.id)}">Elimina</button>`}</span></li>`;
+      const reason = e.reason || (d >= 0 ? "Bonus" : "Malus"), [r1, ...rr] = reason.split(" · ");
+      const tag = reason.startsWith("Certificato · ") ? "certificato" : e.auto ? "automatico" : e.jolly ? "jolly" : isMini(e) ? "mini-sfida" : a ? a.title : "";
+      return `<li class="lev ${d >= 0 ? "b" : "m"}">${p ? avatar(p, "lav") : `<span class="av lav">?</span>`}
+        <span class="lt"><b>${esc(p ? p.name : "Giocatore rimosso")}</b><span class="lr">${esc(r1)}${rr.length ? ` <span class="lr2">· ${esc(rr.join(" · "))}</span>` : ""}</span>${tag || e.trial ? `<span class="ltags">${tag ? `<span class="ltag">${esc(tag)}</span>` : ""}${e.trial ? `<span class="ltag pr">prova</span>` : ""}</span>` : ""}</span>
+        <span class="lside"><span class="lpt ${d >= 0 ? "b" : "m"}">${sign(d)}</span><span class="ltime">${time}</span></span>
+        ${frozen() || e.auto ? "" : `<span class="lact admin-only">${canJolly ? `<button class="btn jolly small" data-jolly="${esc(e.id)}">Jolly</button>` : ""}<button class="btn danger small" data-del="points/${esc(e.id)}">Elimina</button></span>`}</li>`;
+    };
+    $("log").innerHTML = coveredBox + Object.keys(groups).sort().reverse().map(day => {
+      const list = groups[day].sort((a,b) => (b.at||0) - (a.at||0)), pts = list.filter(e => !e.extra);
+      const bon = pts.reduce((s,e) => s + Math.max(0, Number(e.delta)||0), 0), mal = pts.reduce((s,e) => s + Math.min(0, Number(e.delta)||0), 0);
+      const acts = actsOf(day).map(x => x.title).join(" + ");
+      return `<section class="lday"><header class="ldh"><span class="ldn">${dt(day).getDate()}</span>
+          <span class="ldt"><b>${esc(dayLabel(day).replace(/ \d+ dicembre$/, ""))}${day === cd && live() ? ` <span class="ltoday">oggi</span>` : ""}</b><span>${esc(acts || "Giornata libera")}</span></span>
+          <span class="ldsum">${bon ? `<span class="bp">${sign(bon)}</span>` : ""}${mal ? `<span class="mp">${sign(mal)}</span>` : ""}</span></header>
+        <ul class="lgroup">${list.map(item).join("")}</ul></section>`;
     }).join("");
   }
 
@@ -867,7 +895,10 @@
     toast(`Mini-sfida creata: ${sign(m.qDelta)} · ${label}. Ora tocca le persone.`);
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape"){ if (cer) closeCeremony(); else if (!$("adm-panel").hidden) closeAdm(); else if (sheet) closeSheet(); } });
-  $("flt").addEventListener("change", e => { S.filter = e.target.value; renderLog(); });
+  $("v-storico").addEventListener("click", e => {
+    const d = e.target.closest("[data-lday]"); if (d){ S.logDay = d.dataset.lday; renderLog(); enter($("log")); return; }
+    const p = e.target.closest("[data-lpl]"); if (p){ S.filter = p.dataset.lpl; renderLog(); enter($("log")); }
+  });
   $("mode-btn").addEventListener("click", async () => {
     if (S.admin){
       if (S.trial) await setTrial(null);
