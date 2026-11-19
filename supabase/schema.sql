@@ -1,5 +1,5 @@
 -- Settimana Pazza · Winter Edition 2026 — database su Supabase
--- Da incollare una volta sola in: Supabase → SQL Editor → New query → Run.
+-- Da incollare in: Supabase → SQL Editor (foglio vuoto) → Run. Si può rieseguire senza problemi.
 -- Prima di eseguirlo, in fondo metti le email degli admin.
 
 -- Tutti i dati dell'app: giocatori, programma, bonus/malus, punti, mini-sfide, certificati, impostazioni.
@@ -61,7 +61,10 @@ create policy "modifica admin"      on public.docs for update to authenticated u
 create policy "cancellazione admin" on public.docs for delete to authenticated using (public.is_admin());
 
 -- Aggiornamenti in diretta sui telefoni.
-alter publication supabase_realtime add table public.docs;
+do $$ begin
+  alter publication supabase_realtime add table public.docs;
+exception when duplicate_object then null;   -- già aggiunta: va bene così
+end $$;
 
 -- ADMIN: metti qui le email (una riga per persona) e crea gli stessi utenti in
 -- Authentication → Users → Add user (con password, "Auto Confirm User" attivo).
