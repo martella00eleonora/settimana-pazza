@@ -801,9 +801,6 @@
     /* si svela dall'ultima posizione alla prima, un tocco alla volta; poi la scena del vincitore */
     const order = [...new Set(cer.list.map(x => x.rank))].sort((x,y) => y - x);
     const pts = n => `${n} ${Math.abs(n) === 1 ? "punto" : "punti"}`;
-    const nextLabel = k => k >= order.length ? "" : order[k] === 1 ? "Svela il vincitore" : k === 0 ? `Svela l'ultimo posto (${order[0]}°)` : `Svela il ${order[k]}° posto`;
-    const nextBtn = k => cer.remote ? `<p class="count-cap">Il Direttivo sta per svelare ${order[k] === 1 ? "il vincitore" : "il " + order[k] + "° posto"}…</p>`
-      : `<button class="btn gold big ${order[k] === 1 ? "drum" : ""}" data-cer="next" type="button">${nextLabel(k)}</button>`;
     const bigPlace = rank => { const ps = placeOf(rank);
       return `<div class="place now ${rank <= 3 ? "m" + rank : ""}" style="--d:0s"><div class="pl-n">${rank}° posto</div>
         <div class="pl-who">${ps.map(x => `<div class="pl-p">${avatar(x.p, "xl")}<b>${esc(x.p.name)}</b>${x.p.role ? `<span class="role">${esc(x.p.role)}</span>` : ""}</div>`).join("")}</div>
@@ -815,10 +812,21 @@
       : `<div class="cert-grid">${certList.map((c, i) => `<div class="cert-card" style="--d:${i * .15}s"><span class="seal big" aria-hidden="true">★</span>
           <div class="cc-name">${esc(c.label.replace(/^Certificato · /, ""))}</div>
           <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
+    /* classifica: dall'ultimo al 4° una pagina a testa; poi il podio coperto, che si scopre dal 3° al 1° */
+    const podR = order.filter(r => r <= 3 && r !== 1);
+    function rankPages(){ const out = [];
+      order.forEach((r, i) => { if (r <= 3 && podR.length && !out.includes("podium")) out.push("podium"); out.push(r <= 3 && r !== 1 ? "pod" + r : "rank" + (i + 1)); });
+      return out; }
     /* le pagine della cerimonia, in ordine: un tocco dell'admin = una pagina avanti per tutti */
     const X = cer.extra || {}, titles = X.titles || [];
-    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? ["cert-intro", ...certList.map((_, i) => "cert" + i)] : ["cert-none"]), "rank-intro", ...order.flatMap((r, i) => r === 1 && i > 0 ? ["suspense", "rank" + (i + 1)] : ["rank" + (i + 1)])];
-    const page = pages[Math.min(st, pages.length - 1)];
+    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? ["cert-intro", ...certList.map((_, i) => "cert" + i)] : ["cert-none"]), "rank-intro", ...rankPages()];
+    const page = pages[Math.min(st, pages.length - 1)], nextPage = pages[Math.min(st, pages.length - 1) + 1] || "";
+    /* pulsante verso la pagina successiva della classifica */
+    const rankOf = pg => pg.startsWith("pod") && pg !== "podium" ? Number(pg.slice(3)) : pg.startsWith("rank") && pg !== "rank-intro" ? order[Number(pg.slice(4)) - 1] : null;
+    const goNext = () => { const r = rankOf(nextPage);
+      const label = nextPage === "podium" ? "Il podio" : r === 1 ? "Svela il vincitore" : nextPage === "rank1" ? `Svela l'ultimo posto (${r}°)` : `Svela il ${r}° posto`;
+      const wait = nextPage === "podium" ? "Sta per arrivare il podio…" : `Il Direttivo sta per svelare ${r === 1 ? "il vincitore" : "il " + r + "° posto"}…`;
+      return cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big ${r === 1 ? "drum" : ""}" data-cer="next" type="button">${label}</button>`; };
     const goBtn = (label, wait) => cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big" data-cer="next" type="button">${label}</button>`;
     const pres = player("g9"), others = dir.filter(p => p !== pres);
     const msg = X.msg || "Il Direttivo della Settimana Pazza Winter Edition 2026 è riunito per la chiusura ufficiale.";
@@ -847,7 +855,7 @@
       <div class="gifts">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
         return `<div class="gbox w${i % 4} ${i === 0 ? "wide" : ""}" style="--d:${.5 + i * .5}s"><span class="gb-bow" aria-hidden="true"></span>
           <div class="gb-in"><div class="gb-top"><span class="gb-date"><b>${dt(g.d).getDate()}</b>${esc(wdShort(g.d))}</span>${DAYNAME[g.d] ? `<span class="gb-name">${esc(DAYNAME[g.d])}</span>` : ""}</div>
-            <ul class="gb-acts">${acts.length ? acts.map(a => `<li><i aria-hidden="true">${ICONS[a.id] || "✦"}</i><span>${esc(a.title)}</span></li>`).join("") : `<li><i aria-hidden="true">❄</i><span>Giornata libera</span></li>`}</ul>
+            <ul class="gb-acts">${acts.length ? acts.map(a => `<li>${esc(a.title)}</li>`).join("") : `<li class="free">Giornata libera</li>`}</ul>
             <div class="gb-n">${g.n ? `<b>${g.n}</b> ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</div></div>
           <div class="gb-lid" aria-hidden="true"><span class="gb-lnum">${dt(g.d).getDate()}</span></div></div>`; }).join("")}</div>
       ${goBtn("I titoli speciali", "Arrivano i titoli speciali…")}`;
@@ -882,19 +890,25 @@
         <div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>La classifica finale</h2><div class="script">dall'ultimo posto al primo</div>
         <p class="ri-t">${cer.list.length} giocatori, sette giornate, <b>un solo vincitore</b></p>
         <div class="ri-faces" aria-hidden="true">${cer.list.map((x, i) => `<span style="--i:${i}">${avatar(x.p)}</span>`).join("")}</div></div>
-      ${nextBtn(0)}`;
-    else if (page === "suspense"){
-      const sideP = r => { const ps = placeOf(r); return ps.length ? `<div class="su-side m${r}"><div class="su-ps">${ps.map(x => avatar(x.p)).join("")}</div><b>${ps.map(x => esc(x.p.name)).join(", ")}</b><span class="su-step">${r}°</span></div>` : `<div class="su-side"></div>`; };
-      body = `<div class="eyebrow">Classifica finale · manca solo il primo posto</div><h2 class="su-h">Chi vince?</h2>
-        <div class="su-pod">${sideP(2)}<div class="su-first"><span class="su-spot" aria-hidden="true"></span>${CROWN}<span class="su-q">?</span><span class="su-step">1°</span></div>${sideP(3)}</div>
-        <p class="su-t">Sette giornate, ${cer.list.length} giocatori, un solo nome.</p>
-        ${nextBtn(order.length - 1)}`;
+      ${goNext()}`;
+    else if (page === "podium" || (page.startsWith("pod") && rankOf(page))){
+      const fresh = page === "podium" ? null : rankOf(page), shown = fresh ? podR.slice(0, podR.indexOf(fresh) + 1) : [];
+      const step = r => `<span class="su-step">${r}°</span>`;
+      const col = r => { if (r === 1) return `<div class="su-first"><span class="su-spot" aria-hidden="true"></span>${CROWN}<span class="su-q">?</span>${step(1)}</div>`;
+        if (!order.includes(r)) return `<div class="su-side"></div>`;
+        const ps = placeOf(r);
+        return shown.includes(r) ? `<div class="su-side m${r} ${r === fresh ? "fresh" : ""}"><div class="su-ps">${ps.map(x => avatar(x.p)).join("")}</div><b>${ps.map(x => esc(x.p.name)).join(", ")}</b><span class="su-pt">${pts(ps[0].r.tot)}</span>${step(r)}</div>`
+          : `<div class="su-side m${r}"><span class="su-q sm">?</span><b>&nbsp;</b><span class="su-pt">&nbsp;</span>${step(r)}</div>`; };
+      body = `${fresh ? `<div class="win-drum short" aria-hidden="true"><div class="wd-k">Il ${fresh}° posto va a…</div><div class="wd-ball"><span>?</span></div><div class="wd-dots"><i></i><i></i><i></i></div></div>` : ""}
+        <div class="eyebrow">Classifica finale · il podio</div><h2 class="su-h">${fresh === 2 ? "Chi vince?" : "Il podio"}</h2>
+        <div class="su-pod">${col(2)}${col(1)}${col(3)}</div>
+        <p class="su-t">${fresh === 2 ? `Sette giornate, ${cer.list.length} giocatori, un solo nome.` : fresh ? "Restano due gradini da scoprire." : "Tre gradini, tre nomi ancora da scoprire."}</p>
+        ${goNext()}`;
     }
     else {
       const k = Number(page.slice(4)), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
       if (rank !== 1){
-        const toSuspense = order[k] === 1 && pages.includes("suspense");
-        body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${toSuspense ? goBtn("Manca solo il primo posto", "Manca solo il primo posto…") : nextBtn(k)}${doneList(before)}`;
+        body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${goNext()}${doneList(before)}`;
         cer.winFx = false; fireworks.intense = false;
       } else {
         const ws = placeOf(1);
@@ -913,7 +927,7 @@
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
     $("cer").classList.toggle("certmode", page.startsWith("cert"));
-    $("cer").classList.toggle("rankmode", page === "rank-intro" || page === "suspense");
+    $("cer").classList.toggle("rankmode", page === "rank-intro" || page.startsWith("pod"));
     $("cer").classList.toggle("winner", page === "rank" + order.length && order[order.length - 1] === 1);
     $("cer").scrollTop = 0;
     if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; const me = cer; setTimeout(() => { if (cer === me) confetti(); }, reduce ? 0 : DRUM_MS); }

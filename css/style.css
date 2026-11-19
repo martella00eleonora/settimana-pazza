@@ -1117,3 +1117,32 @@ section.view > *{min-width:0}
 .gb-top{flex-wrap:wrap;row-gap:3px}
 .gb-name{white-space:normal;font-size:10px;line-height:1.2}
 .gb-acts span{font-size:12.5px}
+/* la cerimonia non scorre mai di lato (i raggi del vincitore sono più larghi dello schermo) */
+.cer{overflow-x:hidden}
+/* --- interno dei pacchi: niente icone né maiuscole, gli eventi in primo piano --- */
+.gb-in{gap:8px;padding:10px 10px 8px}
+.gb-name{text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;font-style:italic;color:var(--muted)}
+.gb-acts{gap:6px;align-content:center;text-align:center;padding:4px 0}
+.gb-acts li{display:block;font-family:"Cinzel",Georgia,serif;font-weight:800;font-size:15px;line-height:1.25;color:#fff3c4;text-wrap:balance}
+.gb-acts li + li{padding-top:6px;border-top:1px solid rgba(240,193,79,.25)}
+.gb-acts li.free{font-family:var(--f-body);font-weight:600;font-style:italic;color:var(--muted)}
+.gbox.wide .gb-acts{grid-template-columns:none;gap:6px}
+.gbox.wide .gb-acts li{font-size:17px}
+.gb-n{font-size:11px;font-weight:600;text-transform:none;letter-spacing:0}
+/* --- podio coperto: si scopre dal 3° al 1° --- */
+.su-q.sm{width:62px;height:62px;font-size:34px;box-shadow:0 0 0 3px rgba(240,193,79,.7),0 0 20px rgba(240,193,79,.35)}
+.su-side .su-q.sm{animation-duration:1.4s}
+.su-pt{font-size:12px;font-weight:800;color:var(--gold)}
+.su-side.m2 .su-q.sm{box-shadow:0 0 0 3px var(--silver),0 0 20px rgba(201,211,223,.35);color:var(--silver)}
+.su-side.m3 .su-q.sm{box-shadow:0 0 0 3px var(--bronze),0 0 20px rgba(208,138,82,.35);color:var(--bronze)}
+@media (prefers-reduced-motion:no-preference){
+  .win-drum.short{animation:drumOut .4s 1.8s ease-in forwards}
+  .win-drum.short::after{animation:drumFlash .6s 1.7s ease-out forwards}
+  .win-drum.short .wd-ball{animation:drumShake 1.8s cubic-bezier(.5,0,.9,.5) forwards}
+  .su-side.fresh .su-ps .av{animation:winPop 1s 2s cubic-bezier(.2,1.5,.4,1) both}
+  .su-side.fresh b,.su-side.fresh .su-pt{animation:fadeUp .6s 2.5s both}
+  .cer.rankmode .su-h,.cer.rankmode .su-side:not(.fresh){animation:none}
+}
+.gb-acts li{font-family:var(--f-body);font-weight:800;font-size:16px;line-height:1.25;letter-spacing:0;color:#fff3c4}
+.gbox.wide .gb-acts li{font-size:18px}
+.gb-acts li + li{padding-top:5px}
