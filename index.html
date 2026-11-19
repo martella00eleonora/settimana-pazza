@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Settimana Pazza Winter 26/27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@700;800&family=Pinyon+Script&family=Figtree:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="lights" aria-hidden="true">
+  <svg class="wire" viewBox="0 0 100 42" preserveAspectRatio="none"><path d="M0 6 Q 12.5 20 25 6 T 50 6 T 75 6 T 100 6" stroke="#33475e" stroke-width="0.6" fill="none" vector-effect="non-scaling-stroke"/></svg>
+  <div class="bulbs" id="bulbs"></div>
+</div>
+
+<header class="hero">
+  <canvas id="snow" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="eyebrow">21 — 27 dicembre 2026</div>
+    <h1>Settimana<br>Pazza</h1>
+    <div class="script">Winter Edition</div>
+    <div id="count"></div>
+    <div class="modebar">
+      <span id="mode-label"></span>
+      <button class="btn ghost small" id="mode-btn" type="button"></button>
+      <select id="trial-sel" class="admin-only" aria-label="Prova una giornata"></select>
+      <form id="f-pin" hidden>
+        <input type="email" id="in-email" autocomplete="username" placeholder="Email admin" aria-label="Email admin" hidden>
+        <input type="password" id="in-pin" inputmode="numeric" maxlength="64" autocomplete="off" aria-label="PIN admin">
+        <button class="btn small gold" type="submit" id="pin-go">Entra</button>
+      </form>
+    </div>
+  </div>
+</header>
+<div class="knit" aria-hidden="true"></div>
+<div class="trial-bar admin-only" id="trial-bar" hidden><div class="wrap"><span><b>Modalità prova</b> · giornata di <span id="trial-day"></span>. I punti di prova si cancellano quando esci.</span><button class="btn small gold" id="trial-exit" type="button">Esci dalla prova</button></div></div>
+
+<main class="wrap">
+  <section class="view" id="v-classifica">
+    <div class="vh"><h2>Classifica</h2><p id="hint-board"></p></div>
+    <div class="admin-only adm-actions"><button class="btn gold" id="multi-btn" type="button">Assegna a più persone</button><button class="btn gold cert" data-cert="1" id="cert-btn" type="button" hidden>Consegna certificati</button></div>
+    <div id="recap"></div>
+    <div class="bmode" id="bmode" role="group" aria-label="Tipo di classifica"></div>
+    <div class="pod-wrap" id="podium"></div>
+    <ol class="board" id="board"></ol>
+  </section>
+
+  <section class="view" id="v-programma" hidden>
+    <div class="vh"><h2>Programma</h2><p>Sette giorni, una giornata alla volta. Tocca un giorno.</p></div>
+    <div class="days" id="days" role="tablist" aria-label="Giorni"></div>
+    <div id="dayview" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section class="view" id="v-storico" hidden>
+    <div class="vh"><h2>Storico</h2><p>Ogni bonus e malus assegnato, dal più recente.</p></div>
+    <select id="flt" aria-label="Filtra per giocatore"></select>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <section class="view" id="v-regole" hidden>
+    <div class="vh"><h2>Bonus e malus</h2><p>Ognuno ha il suo bonus o malus, che vale per tutta la settimana. Quelli da «1 volta al giorno» si possono prendere una sola volta per giornata; i cumulabili quante volte capita. Le regole di ogni giornata, una volta al giorno, sono nel Programma.</p></div>
+    <div class="dir-card"><div class="lbl">Il Direttivo · Settimana Pazza Winter Edition 2026</div><div id="dir-list" class="dir-list"></div></div>
+    <div class="jolly-card">
+      <div class="ic" aria-hidden="true">J</div>
+      <div><h3>Jolly presidenziale</h3><p>Il Jolly è Giorgio, il Presidente. Trasforma l'ultimo malus della giornata in +1; a chi quel giorno non ha malus vale +2. Al massimo una volta al giorno per persona. Si assegna dal pannello del giocatore, dallo Storico o a più persone insieme. Il Malus Ele già scattato resta.</p></div>
+    </div>
+    <div class="cols">
+      <div><h3 class="b">Bonus</h3><ul class="plist" id="pl-b"></ul></div>
+      <div><h3 class="m">Malus</h3><ul class="plist" id="pl-m"></ul></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bar" aria-label="Sezioni">
+  <div class="wrap" role="tablist">
+    <button role="tab" data-tab="classifica" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></svg>Classifica</button>
+    <button role="tab" data-tab="programma" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Programma</button>
+    <button role="tab" data-tab="storico" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2"/></svg>Storico</button>
+    <button role="tab" data-tab="regole" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>Regole</button>
+  </div>
+</nav>
+
+<div id="sheet-root"></div>
+<div id="toast-root"></div>
+
+<script src="js/config.js"></script>
+<script src="js/dati.js"></script>
+<script src="js/db-online.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

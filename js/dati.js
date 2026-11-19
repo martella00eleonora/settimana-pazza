@@ -1,0 +1,57 @@
+/* Settimana Pazza · Winter Edition 2026 — dati di partenza
+   Giocatori, attività del programma, bonus e malus della settimana, foto dei profili.
+   Questi dati servono solo alla prima apertura: dopo, l'app usa quelli salvati
+   (nel browser, o nel database online se è collegato: lì li carica l'admin al primo accesso). */
+
+/* ---------- dati iniziali ---------- */
+const PLAYERS = ["Bardy","Mg","Ele","Coronaus","Cri","Mary","Antonio","Fede","Andrea","Giorgio","Laura","Jacopo"];
+/* il Direttivo */
+const ROLES = {g9:"Presidente", g10:"Vicepresidente", g2:"Assessore", g3:"Assessore"};
+const PCOLORS = ["#e0404a","#2f8463","#c8962a","#3c6fd1","#9b4fc0","#e07a2e","#169c9c","#c2457a","#6f8f22","#6a5be0","#b5523a","#2b8fd6"];
+const A = (day, order, title, dress, notes, rules) => ({day, order, title, dress, notes, rules: rules.map(([label, delta]) => ({label, delta})), createdAt: order});
+const SEED = {
+  players: Object.fromEntries(PLAYERS.map((n, i) => ["g" + i, {name:n, color:i, createdAt:i, ...(ROLES["g" + i] ? {role:ROLES["g" + i]} : {})}])),
+  activities: {
+    ape: A("2026-12-24", 1, "Ape + Pattinaggio", "", ["Aperitivo tutti insieme, poi sul ghiaccio."], [["Non pattini", -1], ["Pattini senza mai cadere", 1]]),
+    pigiama: A("2026-12-22", 2, "Serata pigiama e quiz party", "Pigiama e pantofole", [
+      "Super Quizzone: 10/20 domande, 2 squadre, un pulsante per prenotarsi, a tempo.",
+      "Una persona per squadra fa da giudice imparziale.",
+      "Gioco del bicchiere: 2 squadre.",
+      "Altri giochi: parole al contrario, mimo.",
+      "Alternativa sportiva invernale: Coppa Volley."
+    ], [["Non sei in pigiama", -1]]),
+    ppt: A("2026-12-23", 3, "PowerPoint Night", "Costume + serata colore", [
+      "Tema libero: 5 minuti di presentazione e 5 di dibattito.",
+      "Votazione anonima: in palio 1+1 malus o 2 bonus."
+    ], [["Miglior PowerPoint (voto anonimo)", 2], ["Peggior PowerPoint (voto anonimo)", -2]]),
+    santa: A("2026-12-25", 4, "Secret Santa", "", ["Ognuno fa un regalo a un amico estratto a sorte."], []),
+    tombola: A("2026-12-25", 5, "Tombolone", "", ["Massimo 3 partite.", "Premi casuali: un regalo a testa, portato o fatto a mano."], [["Tombola", 1]]),
+    shooting: A("2026-12-21", 0, "Shooting calendario", "Natalizio: maglioni, sciarpa, berretto, dolce vita", ["Una persona per ogni mese.", "Set natalizio, ignorante all'80%."], []),
+    festa: A("2026-12-26", 7, "Festa nazionale: compleanno di Cri", "", ["La ricorrenza dell'anno: si festeggia Cri."], []),
+    premi: A("2026-12-27", 8, "Premiazione finale", "", ["Chi è in testa alla classifica vince la Settimana Pazza Winter 26/27."], [])
+  },
+  presets: Object.fromEntries([
+    // [nome, motivo, punti, di chi è, quante volte a serata: "once" = 1 volta, "cum" = cumulabile, "auto" = automatico]
+    ["Bonus Bardahan", "alcolico", 1, "g0", "once"], ["Bonus Coronaus", "oggi guidi tu", 1, "g3", "once"], ["Bonus Laura", "ore piccole (fine serata, min. 1)", 1, "g10", "once"],
+    ["Malus Ele", "tenacia: scatta da solo al 2° malus della giornata", -1, "g2", "auto"],
+    ["Malus Jacopo", "bestemmi", -1, "g11", "cum"], ["Malus Fede", "ritardo oltre 20 min", -1, "g7", "once"], ["Malus NMG", "inglesismi", -1, "g1", "cum"], ["Malus Antonio", "scrolli i social", -1, "g6", "cum"],
+    ["Malus Cri", "non rispondi, non proattivo", -1, "g4", "cum"], ["Malus Mary", "hai sonno, chiudi gli occhi", -1, "g5", "cum"], ["Malus Andrea", "3 capi di colore nero", -1, "g8", "once"]
+  ].map(([name, short, delta, owner, kind], i) => ["p" + i, {label: name + " · " + short, short, delta, owner, once: kind === "once", auto: kind === "auto", createdAt:i}])),
+  points: {}
+};
+
+/* foto dei profili (224×224, ritagliate a cerchio dagli originali in foto/originali) */
+const PHOTOS = {
+  "g0": "foto/profili/bardy.jpg",
+  "g1": "foto/profili/mg.jpg",
+  "g2": "foto/profili/ele.jpg",
+  "g3": "foto/profili/coronaus.jpg",
+  "g4": "foto/profili/cri.jpg",
+  "g5": "foto/profili/mary.jpg",
+  "g6": "foto/profili/antonio.jpg",
+  "g7": "foto/profili/fede.jpg",
+  "g8": "foto/profili/andrea.jpg",
+  "g10": "foto/profili/laura.jpg",
+  "g11": "foto/profili/jacopo.jpg",
+  "g9": "foto/profili/giorgio.jpg"
+};
