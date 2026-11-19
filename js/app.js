@@ -222,6 +222,7 @@
     $("trial-chips").parentElement.hidden = frozen() && !trialDone();
     $("trial-chips").innerHTML = DAYS.map(d => `<button type="button" class="tchip ${d === S.trial ? "on" : ""}" data-trial="${d}"><span>${esc(wdShort(d))}</span><b>${dt(d).getDate()}</b></button>`).join("")
       + `<button type="button" class="tchip wide" data-trial="closing"><span>prova la</span><b>Cerimonia</b></button>`
+      + (S.online ? `<button type="button" class="tchip wide live" data-trial="closing-live"><span>per tutti</span><b>Cerimonia in diretta</b></button>` : "")
       + (S.trial ? `<button type="button" class="tchip wide out" data-trial=""><span>finisci</span><b>Esci dalla prova</b></button>` : "");
     $("cert-btn").hidden = !certOpen();
     $("trial-bar").hidden = !S.trial;
@@ -727,10 +728,11 @@
 
   /* ---------- cerimonia di chiusura con fuochi d'artificio ---------- */
   let cer = null;
-  function openCeremony(isTrial, remote){
+  /* live = prova della cerimonia mandata in diretta anche agli altri telefoni (solo online) */
+  function openCeremony(isTrial, remote, live){
     const list = remote ? remoteList(remote) : ranked();
     if (!list.length) return;
-    cer = {step: remote ? remote.step : 0, trial:isTrial, list, fw:null, remote, extra: remote ? (remote.extra || {}) : ceremonyExtra()};
+    cer = {step: remote ? remote.step : 0, trial:isTrial, live:!!live, list, fw:null, remote, extra: remote ? (remote.extra || {}) : ceremonyExtra()};
     const root = document.createElement("div");
     root.id = "cer"; root.className = "cer"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Chiusura ufficiale");
     root.innerHTML = `<canvas id="fw" aria-hidden="true"></canvas><div class="cer-in" id="cer-in"></div>`;
@@ -753,7 +755,7 @@
   }
   function closeCeremony(){
     if (!cer) return;
-    if (!cer.remote && !cer.trial && S.online) db.sendCeremony({closed:true});
+    if (!cer.remote && (!cer.trial || cer.live) && S.online) db.sendCeremony({closed:true});
     cancelAnimationFrame(cer.fw); $("cer")?.remove(); cer = null; render();
   }
   /* chi guarda dal proprio telefono riceve dall'admin la classifica già pronta, passo per passo */
@@ -783,7 +785,7 @@
     return {stats, days, titles, msg:presMsg()};
   }
   function ceremonyPayload(){
-    return {step:cer.step, extra:cer.extra, list:cer.list.map(x => ({id:x.p.id, tot:x.r.tot, rank:x.rank})),
+    return {step:cer.step, trial:!!cer.trial, extra:cer.extra, list:cer.list.map(x => ({id:x.p.id, tot:x.r.tot, rank:x.rank})),
       certs:certsOf(CERT_DAY).map(c => ({label:c.label, ids:takers("premi", c.label, CERT_DAY).map(p => p.id)}))};
   }
   function onRemoteCeremony(pl){
@@ -924,8 +926,11 @@
         else if (!cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
       }
     }
-    if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
-    el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
+    if ((!cer.trial || cer.live) && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
+    const trialNote = cer.remote?.trial ? "Prova della cerimonia: la classifica non è quella vera"
+      : cer.live ? "Prova in diretta: la vedono anche gli altri telefoni, ma la classifica non viene scoperta davvero"
+      : cer.trial ? "Prova della cerimonia: la classifica non viene scoperta davvero" : "";
+    el.innerHTML = `${trialNote ? `<div class="cer-trial">${trialNote}</div>` : ""}${body}`;
     $("cer").classList.toggle("certmode", page.startsWith("cert"));
     $("cer").classList.toggle("rankmode", page === "rank-intro" || page.startsWith("pod"));
     $("cer").classList.toggle("winner", page === "rank" + order.length && order[order.length - 1] === 1);
@@ -1132,10 +1137,18 @@
     const b = e.target.closest("[data-trial]"); if (!b) return;
     const v = b.dataset.trial; closeAdm();
     if (v === "closing"){ openCeremony(true); return; }
+    if (v === "closing-live"){ armLive(b); return; }
     if (!v){ if (S.trial) setTrial(null); return; }
     if (v !== S.trial) setTrial(v);
   });
   $("adm-panel").addEventListener("click", e => { if (e.target.id === "adm-panel") closeAdm(); });
+  /* la prova in diretta va sui telefoni di tutti: chiede conferma con un secondo tocco */
+  function armLive(btn){
+    if (btn.dataset.ok){ delete btn.dataset.ok; openCeremony(true, null, true); return; }
+    $("adm-panel").hidden = false; btn.dataset.ok = "1"; btn.querySelector("b").textContent = "Tocca ancora per iniziare";
+    toast("La prova in diretta compare a chi ha il sito aperto. Tocca ancora per iniziare.");
+    setTimeout(() => { if (btn.isConnected && btn.dataset.ok){ delete btn.dataset.ok; btn.querySelector("b").textContent = "Cerimonia in diretta"; } }, 4000);
+  }
   /* cancella punti, mini-sfide, certificati e cerimonia della prova generale */
   $("pg-clean").addEventListener("click", e => armOrRun(e.currentTarget, async () => {
     const all = [...S.points.map(x => "points/" + x.id), ...S.extras.map(x => "extras/" + x.id), ...S.settings.map(x => "settings/" + x.id)];

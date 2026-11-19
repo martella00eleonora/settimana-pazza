@@ -1146,3 +1146,5 @@ section.view > *{min-width:0}
 .gb-acts li{font-family:var(--f-body);font-weight:800;font-size:16px;line-height:1.25;letter-spacing:0;color:#fff3c4}
 .gbox.wide .gb-acts li{font-size:18px}
 .gb-acts li + li{padding-top:5px}
+.tchip.live{grid-column:1 / -1;border-color:rgba(224,64,74,.55);background:linear-gradient(135deg,rgba(224,64,74,.16),transparent 70%),var(--night)}
+.tchip.live b{color:#ff9aa0}
