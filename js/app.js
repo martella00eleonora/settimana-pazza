@@ -67,7 +67,9 @@
   const SHIFT = 6 * 3600 * 1000;
   const serataOf = ts => iso(new Date(ts - SHIFT));
   const currentDay = () => (S.trial && DAYS.includes(S.trial)) ? S.trial : serataOf(NOW());
-  const live = () => (S.trial && NOW() < END && !revealed()) ? DAYS.includes(S.trial) : (DAYS.includes(currentDay()) && NOW() < END);
+  /* in prova: dopo la classifica finale della cerimonia di prova la prova resta bloccata, come nella realtà */
+  const trialDone = () => !!S.trial && lsGet("sp-prova-chiusa") === "1";
+  const live = () => (S.trial && NOW() < END && !revealed() && !trialDone()) ? DAYS.includes(S.trial) : (!S.trial && DAYS.includes(currentDay()) && NOW() < END);
   /* Dal 26 (alle 6) la classifica è coperta per chi non è admin, fino a quando il Direttivo la svela */
   const COVER_FROM = new Date(2026, 11, 26, 6, 0, 0), CERT_DAY = "2026-12-27";
   const revealed = () => !!S.settings.find(x => x.id === "main")?.revealed;
@@ -78,8 +80,10 @@
      In modalità prova sul 27 sono aperti tutti e due, perché la prova non simula l'ora. */
   const CERT_FROM = new Date(2026, 11, 27, 23, 0, 0);
   const certHour = () => !S.trial && NOW() >= CERT_FROM.getTime();
-  const assignOpen = () => live() && !certHour();
-  const frozen = () => revealed() || NOW() >= END.getTime();   // dopo mezzanotte, e dopo la cerimonia, si può solo guardare
+  /* il 27 i punti si chiudono alle 23 oppure appena si consegna il primo certificato */
+  const certsStarted = () => certsOf(CERT_DAY).some(c => !!c.trial === !!S.trial);
+  const assignOpen = () => live() && !certHour() && !(currentDay() === CERT_DAY && certsStarted());
+  const frozen = () => revealed() || NOW() >= END.getTime() || trialDone();   // dopo mezzanotte, e dopo la cerimonia, si può solo guardare
   const certOpen = () => live() && currentDay() === CERT_DAY && (S.trial || certHour());
   const dayOf = e => e.day || serataOf(e.at || 0);
   const JOLLY = "Jolly presidenziale · ";
@@ -215,7 +219,7 @@
     $("in-pin").inputMode = S.online ? "text" : "numeric";
     $("in-pin").placeholder = S.online ? "Password" : lsGet("sp-pin") ? "PIN admin" : "Scegli un PIN";
     $("pin-go").textContent = S.online ? "Accedi" : lsGet("sp-pin") ? "Entra" : "Imposta";
-    $("trial-chips").parentElement.hidden = frozen();
+    $("trial-chips").parentElement.hidden = frozen() && !trialDone();
     $("trial-chips").innerHTML = DAYS.map(d => `<button type="button" class="tchip ${d === S.trial ? "on" : ""}" data-trial="${d}"><span>${esc(wdShort(d))}</span><b>${dt(d).getDate()}</b></button>`).join("")
       + `<button type="button" class="tchip wide" data-trial="closing"><span>prova la</span><b>Cerimonia</b></button>`
       + (S.trial ? `<button type="button" class="tchip wide out" data-trial=""><span>finisci</span><b>Esci dalla prova</b></button>` : "");
@@ -225,7 +229,7 @@
     $("multi-btn").disabled = !assignOpen();
     renderDirettivo();
     $("hint-board").textContent = !S.admin ? (beforeStart() ? "La Settimana Pazza si apre lunedì 21 dicembre: da lì parte la classifica." : hidden() ? "Tocca un nome per vedere i bonus e malus presi fino al 25." : "Tocca un nome per vedere i bonus e malus che ha preso.")
-      : live() && !assignOpen() ? "Sono le 23: ora si consegnano solo i certificati. A mezzanotte la chiusura ufficiale."
+      : live() && !assignOpen() ? "Consegna dei certificati in corso: i punti sono chiusi. A mezzanotte la chiusura ufficiale."
       : live() ? `Giornata in corso: ${dayLabel(currentDay())}. Tocca un nome o assegna a più persone insieme.${covered() ? " La classifica è coperta: i punti li vedi solo tu." : ""}`
       : new Date(NOW()) < START ? "Le assegnazioni si aprono lunedì 21 dicembre." : "La settimana è finita: le assegnazioni sono chiuse.";
   }
@@ -499,7 +503,7 @@
     ${p.role === "Presidente" ? `<div class="mine-card j"><span class="pill jp">J</span><span>È lui il Jolly presidenziale</span></div>`
       : m ? `<div class="mine-card ${m.delta>=0?"b":"m"}"><span class="pill ${m.delta>=0?"b":"m"}">${sign(m.delta)}</span><span>Il suo ${m.delta>=0?"bonus":"malus"}: ${esc(m.label)}</span></div>` : ""}`; };
   const serataPill = () => `<div class="serata"><span class="dot"></span>Oggi · <b>${esc(dayLabel(currentDay()))}</b>${S.trial ? " · prova" : ""}</div>`;
-  const closedNote = () => `<p class="closed">${new Date(NOW()) < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre." : live() ? "Sono le 23: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
+  const closedNote = () => `<p class="closed">${new Date(NOW()) < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre." : live() ? "Consegna dei certificati in corso: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
 
   /* chip di un bonus/malus: disattivato se automatico o se è da 1 volta e la persona l'ha già preso stasera */
   function itemChip(it, attr, pid){
@@ -662,9 +666,9 @@
       for (const e of trialPts) await write(() => db.doc("points/" + e.id).delete());
       for (const x of S.extras.filter(x => x.trial)) await write(() => db.doc("extras/" + x.id).delete());
       if (S.settings.some(x => x.id === "messaggio-prova")) await write(() => db.doc("settings/messaggio-prova").delete());
-      S.trial = null; lsSet("sp-prova", null);
+      S.trial = null; lsSet("sp-prova", null); lsSet("sp-prova-chiusa", null);
       toast(trialPts.length ? `Prova finita: cancellati ${trialPts.length} punti di prova.` : "Prova finita.");
-    } else { S.trial = day; lsSet("sp-prova", day); S.day = day; toast(`Prova della giornata di ${dayLabel(day)}. I punti di prova si cancellano quando esci.`); }
+    } else { S.trial = day; lsSet("sp-prova", day); lsSet("sp-prova-chiusa", null); S.day = day; toast(`Prova della giornata di ${dayLabel(day)}. I punti di prova si cancellano quando esci.`); }
     closeSheet(); render();
   }
 
@@ -674,7 +678,7 @@
     sheet = {cert:{sel:new Set()}};
     $("sheet-root").innerHTML = `<div class="scrim" id="scrim"><div class="sheet cert-sheet" role="dialog" aria-modal="true" aria-labelledby="ce-t">
       <div class="grab" aria-hidden="true"></div>
-      <div class="ce-head"><span class="seal big" aria-hidden="true">★</span><div><h3 id="ce-t">Consegna dei certificati</h3><p>Ogni certificato vale <b>+1</b>. Scrivi il nome, tocca chi lo riceve e consegna.</p></div></div>
+      <div class="ce-head"><span class="seal big" aria-hidden="true">★</span><div><h3 id="ce-t">Consegna dei certificati</h3><p>Ogni certificato vale <b>+1</b>. Scrivi il nome, tocca chi lo riceve e consegna.${certsStarted() ? "" : " <b>Con il primo certificato si chiudono i punti.</b>"}</p></div></div>
       <form id="f-cert" style="display:grid;gap:10px">
         <input type="text" id="ce-label" placeholder="Es. Miglior ballerino della settimana" maxlength="60" autocomplete="off" aria-label="Nome del certificato">
         <div class="pgrid" id="ce-grid"></div>
@@ -806,46 +810,62 @@
         <div class="pl-pt">${pts(ps[0].r.tot)}${ps.length > 1 ? " · pari merito" : ""}</div></div>`; };
     const doneList = ranks => ranks.length ? `<div class="revealed"><div class="lbl">Già svelati</div><ol>${ranks.map(r => placeOf(r).map(x =>
       `<li class="${r <= 3 ? "m" + r : ""}"><span class="rv-r">${r}°</span>${avatar(x.p)}<b>${esc(x.p.name)}</b><span class="rv-p">${x.r.tot}</span></li>`).join("")).join("")}</ol></div>` : "";
-    /* passi: 0 apertura, 1 certificati, poi le posizioni dall'ultima alla prima */
     const certList = cer.remote ? (cer.remote.certs || []) : certsOf(CERT_DAY).map(c => ({label:c.label, ids:takers("premi", c.label, CERT_DAY).map(p => p.id)}));
     const certCards = () => !certList.length ? `<div class="lempty"><span aria-hidden="true">★</span><b>Nessun certificato consegnato</b><p>Quest'anno niente attestati.</p></div>`
       : `<div class="cert-grid">${certList.map((c, i) => `<div class="cert-card" style="--d:${i * .15}s"><span class="seal big" aria-hidden="true">★</span>
           <div class="cc-name">${esc(c.label.replace(/^Certificato · /, ""))}</div>
           <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
-    const X = cer.extra || {}, PRE = 5;   // passi prima della classifica: apertura, numeri, giornate, titoli, certificati
+    /* le pagine della cerimonia, in ordine: un tocco dell'admin = una pagina avanti per tutti */
+    const X = cer.extra || {}, titles = X.titles || [];
+    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), "certs", ...order.map((_, i) => "rank" + (i + 1))];
+    const page = pages[Math.min(st, pages.length - 1)];
     const goBtn = (label, wait) => cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big" data-cer="next" type="button">${label}</button>`;
-    const pres = player("g9");
+    const pres = player("g9"), others = dir.filter(p => p !== pres);
+    const msg = X.msg || "Il Direttivo della Settimana Pazza Winter Edition 2026 è riunito per la chiusura ufficiale.";
+    fireworks.calm = !page.startsWith("rank");
     let body;
-    if (st === 0) body = `<div class="cer-hero"><div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Winter Edition</div></div>
-      <div class="garland cer-garland" aria-hidden="true"></div>
-      <div class="dir-card cer-dir"><div class="lbl">Il Direttivo</div><div class="dir-list">${direttivoHTML()}</div></div>
-      ${X.msg ? `<figure class="pres-msg"><span class="pm-q" aria-hidden="true">“</span><blockquote>${esc(X.msg).replace(/\n/g, "<br>")}</blockquote>
-        <figcaption>${pres ? avatar(pres) : ""}<span><b>${esc(pres ? pres.name : "Il Presidente")}</b><span class="role">Presidente</span></span></figcaption></figure>` : ""}
+    if (page === "intro") body = `<div class="cer-hero"><div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Winter Edition</div></div>
+      <figure class="proclama">
+        <div class="pr-top">${pres ? `${CROWN}${avatar(pres, "pr-av")}` : ""}</div>
+        <div class="pr-kicker">Messaggio del Presidente</div>
+        <div class="pr-orn" aria-hidden="true">✦ ❄ ✦</div>
+        <blockquote>${esc(msg).replace(/\n/g, "<br>")}</blockquote>
+        <figcaption><span class="pr-name">${esc(pres ? pres.name : "Il Presidente")}</span><span class="pr-role">Presidente della Settimana Pazza</span></figcaption>
+        <span class="pr-seal" aria-hidden="true">★</span>
+      </figure>
+      ${others.length ? `<div class="pr-dir"><div class="lbl">Con il Direttivo</div><div class="pr-row">${others.map(p => `<span class="pr-m">${avatar(p)}<b>${esc(p.name)}</b><span class="role">${esc(p.role)}</span></span>`).join("")}</div></div>` : ""}
       ${goBtn("La settimana in numeri", "Il Direttivo sta per aprire la chiusura ufficiale…")}`;
-    else if (st === 1) body = `<div class="cer-hero"><div class="eyebrow">21 — 27 dicembre</div><h2>La settimana in numeri</h2><div class="script">quanto ne abbiamo combinate</div></div>
-      <div class="stat-grid">${(X.stats || []).map(([l, n, k], i) => `<div class="stat ${k}" style="--d:${i * .18}s"><b class="stat-n" data-to="${n}">0</b><span>${esc(l)}</span></div>`).join("")}</div>
+    else if (page === "numbers") body = `<div class="cer-hero"><div class="eyebrow">21 — 27 dicembre</div><h2>La settimana in numeri</h2></div>
+      <div class="bb-wrap">${[0, 1].map(r => `<div class="bb-row">${(X.stats || []).slice(r * 3, r * 3 + 3).map(([l, n, k], i) => `<div class="bb ${k}" style="--d:${(r * 3 + i) * .35}s;--h:${[14, 26, 18][i]}px">
+          <span class="bb-hook" aria-hidden="true"></span><span class="bb-cap" aria-hidden="true"></span><span class="bb-ball"><b class="stat-n" data-to="${n}" data-delay="${(r * 3 + i) * 350 + 500}">0</b></span><span class="bb-l">${esc(l)}</span></div>`).join("")}</div>`).join("")}</div>
       ${goBtn("Le sette giornate", "Si ripercorrono le giornate…")}`;
-    else if (st === 2) body = `<div class="cer-hero"><div class="eyebrow">Il nostro viaggio</div><h2>Le sette giornate</h2></div>
-      <ol class="journey">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
-        return `<li style="--d:${i * .22}s"><span class="jb"><span>${dt(g.d).getDate()}</span></span>
-          <div class="jt"><span class="jd">${esc(wdLong(g.d).replace(/ \d+ dicembre$/, ""))}${DAYNAME[g.d] ? ` · ${esc(DAYNAME[g.d])}` : ""}</span>
-          <b>${acts.length ? acts.map(a => `${ICONS[a.id] || "✦"} ${esc(a.title)}`).join("<br>") : "Giornata libera"}</b>
-          <span class="jn">${g.n ? `${g.n} ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</span></div></li>`; }).join("")}</ol>
+    else if (page === "days") body = `<div class="cer-hero"><div class="eyebrow">Il nostro calendario dell'Avvento</div><h2>Le sette giornate</h2></div>
+      <div class="advent">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
+        return `<div class="door ${i === 6 ? "wide" : ""}" style="--d:${.4 + i * .45}s">
+          <div class="door-in"><span class="dn-ic" aria-hidden="true">${acts.map(a => ICONS[a.id] || "✦").join(" ") || "❄"}</span>
+            <span class="dn-d">${esc(wdShort(g.d))} ${dt(g.d).getDate()}${DAYNAME[g.d] ? ` · ${esc(DAYNAME[g.d])}` : ""}</span>
+            <b>${acts.length ? acts.map(a => esc(a.title)).join(" + ") : "Giornata libera"}</b>
+            <span class="dn-n">${g.n ? `${g.n} ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</span></div>
+          <div class="door-f ${i % 2 ? "g" : "r"}" aria-hidden="true"><span>${dt(g.d).getDate()}</span></div></div>`; }).join("")}</div>
       ${goBtn("I titoli speciali", "Arrivano i titoli speciali…")}`;
-    else if (st === 3) body = `<div class="cer-hero"><div class="eyebrow">Assegnati dal Direttivo</div><h2>Titoli speciali</h2><div class="script">senza guardare i punti</div></div>
-      ${(X.titles || []).length ? `<div class="title-grid">${X.titles.map((t, i) => `<div class="tcard" style="--d:${i * .2}s"><span class="t-ic" aria-hidden="true">${t.ic}</span>
-          <div class="t-name">${esc(t.name)}</div>
-          <div class="t-who">${t.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div>
-          <span class="t-n">${t.n} ${esc(t.what)}</span></div>`).join("")}</div>`
-        : `<div class="lempty"><span aria-hidden="true">❄</span><b>Nessun titolo</b><p>Settimana tranquilla, a quanto pare.</p></div>`}
-      ${goBtn("I certificati", "Arrivano i certificati…")}`;
-    else if (st === 4) body = `<div class="cer-hero"><div class="eyebrow">Domenica 27 dicembre</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
+    else if (page.startsWith("title")){
+      const i = page === "title-none" ? -1 : Number(page.slice(5)), last = i === titles.length - 1 || i < 0;
+      const t = titles[i];
+      body = `<div class="cer-hero"><div class="eyebrow">Titolo speciale${titles.length ? ` · ${i + 1} di ${titles.length}` : ""}</div><h2>Titoli speciali</h2></div>
+        ${t ? `<div class="tbig"><span class="tb-ic" aria-hidden="true">${t.ic}</span><div class="tb-name">${esc(t.name)}</div>
+            <div class="tb-who">${t.ids.map(player).filter(Boolean).map(p => `<span class="tb-p">${avatar(p, "xl")}<b>${esc(p.name)}</b></span>`).join("")}</div>
+            <span class="tb-n">${t.n} ${esc(t.what)}</span></div>`
+          : `<div class="lempty"><span aria-hidden="true">❄</span><b>Nessun titolo</b><p>Settimana tranquilla, a quanto pare.</p></div>`}
+        ${goBtn(last ? "I certificati" : "Prossimo titolo", last ? "Arrivano i certificati…" : "Il Direttivo sta per svelare il prossimo titolo…")}
+        ${i > 0 ? `<div class="revealed"><div class="lbl">Già assegnati</div><ol>${titles.slice(0, i).reverse().map(x => `<li><span class="rv-r">${x.ic}</span>${avatar(player(x.ids[0]))}<b>${esc(x.name)}</b><span class="rv-p">${x.ids.map(player).filter(Boolean).map(p => esc(p.name)).join(", ")}</span></li>`).join("")}</ol></div>` : ""}`;
+    }
+    else if (page === "certs") body = `<div class="cer-hero"><div class="eyebrow">Domenica 27 dicembre</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
       ${certCards()}${nextBtn(0)}`;
     else {
-      const k = Math.min(st - PRE + 1, order.length), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
+      const k = Number(page.slice(4)), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
       if (rank !== 1){
         body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${nextBtn(k)}${doneList(before)}`;
-        cer.winFx = false;
+        cer.winFx = false; fireworks.intense = false;
       } else {
         const ws = placeOf(1);
         body = `<div class="win-stage"><div class="rays" aria-hidden="true"></div>
@@ -855,12 +875,13 @@
           <div class="win-after">${doneList(before)}
           <button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button></div>`;
         fireworks.intense = true;
-        if (!cer.trial && !cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
+        if (cer.trial) lsSet("sp-prova-chiusa", "1");
+        else if (!cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
       }
     }
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
-    $("cer").classList.toggle("winner", st >= PRE && order[Math.min(st - PRE + 1, order.length) - 1] === 1);
+    $("cer").classList.toggle("winner", page === "rank" + order.length && order[order.length - 1] === 1);
     $("cer").scrollTop = 0;
     if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; confetti(); }
     countUp();
@@ -870,10 +891,10 @@
     document.querySelectorAll("#cer .stat-n[data-to]").forEach((el, i) => {
       const to = Number(el.dataset.to) || 0; el.removeAttribute("data-to");
       if (reduce || !to){ el.textContent = to; return; }
-      const t0 = performance.now() + i * 180, dur = 1100;
+      const wait = Number(el.dataset.delay) || i * 180, t0 = performance.now() + wait, dur = 1100;
       const step = t => { if (!el.isConnected) return; const k = Math.min(1, Math.max(0, (t - t0) / dur)); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
       requestAnimationFrame(step);
-      setTimeout(() => { if (el.isConnected) el.textContent = to; }, i * 180 + dur + 400);
+      setTimeout(() => { if (el.isConnected) el.textContent = to; }, wait + dur + 400);
     });
   }
   /* pioggia di coriandoli dorati sulla scena del vincitore */
@@ -897,17 +918,22 @@
     fireworks.intense = false;
     if (reduce){ for (let i = 0; i < 3; i++) boom(); ctx.globalCompositeOperation = "lighter"; for (const p of parts){ ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x + p.vx*20, p.y + p.vy*20, 2, 0, 6.283); ctx.fill(); } return; }
     let t = 0;
+    const glitter = () => parts.push({x:Math.random()*W, y:-6, vx:(Math.random()-.5)*.3, vy:.35 + Math.random()*.55, life:1, col:Math.random() < .7 ? "#f0c14f" : "#f3f6fb", g:true, r:.8 + Math.random()*1.6, tw:Math.random()*6.28});
     const loop = () => {
       t++;
-      if (t % (fireworks.intense ? 14 : 55) === 0) boom();
+      if (fireworks.calm){ if (t % 11 === 0) glitter(); }
+      else if (t % (fireworks.intense ? 14 : 55) === 0) boom();
       ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(0,0,W,H);
       ctx.globalCompositeOperation = "lighter";
-      for (let i = parts.length - 1; i >= 0; i--){ const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += .045; p.vx *= .985; p.life -= .012;
+      for (let i = parts.length - 1; i >= 0; i--){ const p = parts[i];
+        if (p.g){ p.x += p.vx + Math.sin((t + p.tw * 40) / 40) * .25; p.y += p.vy; if (p.y > H + 10){ parts.splice(i,1); continue; }
+          ctx.globalAlpha = .35 + .45 * Math.abs(Math.sin(t / 18 + p.tw)); ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); continue; }
+        p.x += p.vx; p.y += p.vy; p.vy += .045; p.vx *= .985; p.life -= .012;
         if (p.life <= 0){ parts.splice(i,1); continue; } ctx.globalAlpha = p.life; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, 6.283); ctx.fill(); }
       ctx.globalAlpha = 1;
       if (cer) cer.fw = requestAnimationFrame(loop);
     };
-    boom(); cer.fw = requestAnimationFrame(loop);
+    if (!fireworks.calm) boom(); cer.fw = requestAnimationFrame(loop);
   }
 
   /* ---------- effetti ---------- */
