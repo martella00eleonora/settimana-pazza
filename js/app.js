@@ -187,7 +187,7 @@
     if (S.trial) $("trial-day").textContent = dayLabel(S.trial);
     $("multi-btn").disabled = !assignOpen();
     $("dir-list").innerHTML = S.players.filter(p => p.role).sort((a,b) => ["Presidente","Vicepresidente","Assessore"].indexOf(a.role) - ["Presidente","Vicepresidente","Assessore"].indexOf(b.role)).map(p => `<div class="dir-p">${avatar(p)}<span><b>${esc(p.name)}</b><br><span class="role">${esc(p.role)}${p.role === "Presidente" ? " · Jolly presidenziale" : ""}</span></span></div>`).join("");
-    $("hint-board").textContent = !S.admin ? (hidden() ? "Tocca un nome per vedere i bonus e malus presi fino al 25." : "Tocca un nome per vedere i bonus e malus che ha preso.")
+    $("hint-board").textContent = !S.admin ? (beforeStart() ? "La Settimana Pazza si apre lunedì 21 dicembre: da lì parte la classifica." : hidden() ? "Tocca un nome per vedere i bonus e malus presi fino al 25." : "Tocca un nome per vedere i bonus e malus che ha preso.")
       : live() && !assignOpen() ? "Sono le 23: ora si consegnano solo i certificati. A mezzanotte la chiusura ufficiale."
       : live() ? `Giornata in corso: ${dayLabel(currentDay())}. Tocca un nome o assegna a più persone insieme.${covered() ? " La classifica è coperta: i punti li vedi solo tu." : ""}`
       : new Date() < START ? "Le assegnazioni si aprono lunedì 21 dicembre. Per provare ora usa «Prova una giornata»." : "La settimana è finita: le assegnazioni sono chiuse.";
@@ -295,7 +295,13 @@
   /* ---------- programma ---------- */
   const whoList = (who, day) => hiddenDay(day) ? `<span class="none">?? · si scopre il 28</span>`
     : who.length ? who.map(p => `<span class="mini" style="--pc:${colorOf(p)}" title="${esc(p.name)}">${esc(p.name)}</span>`).join("") : `<span class="none">Ancora nessuno</span>`;
+  const beforeStart = () => !S.trial && Date.now() < START.getTime();
   function renderDays(){
+    if (beforeStart() && !S.admin){
+      $("days").innerHTML = "";
+      $("dayview").innerHTML = `<div class="covered"><div class="q" aria-hidden="true">?</div><b>Il programma è una sorpresa</b><p>Si svela lunedì 21 dicembre, quando si apre la Settimana Pazza.</p></div>`;
+      return;
+    }
     const cd = currentDay(), isLive = live();
     if (!S.day) S.day = DAYS.includes(cd) ? cd : DAYS[0];
     $("days").innerHTML = DAYS.map(d => `<button class="day ${isLive && d===cd ? "today" : ""} ${isLive && d < cd ? "past" : ""}" role="tab" data-day="${d}" aria-selected="${d===S.day}">
@@ -809,8 +815,9 @@
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape"){ if (cer) closeCeremony(); else if (sheet) closeSheet(); } });
   $("flt").addEventListener("change", e => { S.filter = e.target.value; renderLog(); });
-  $("mode-btn").addEventListener("click", () => {
+  $("mode-btn").addEventListener("click", async () => {
     if (S.admin){
+      if (S.trial) await setTrial(null);
       S.admin = false; lsSet("sp-admin", null); closeSheet();
       if (S.online) db.auth.signOut().then(() => db.loadAll()).catch(() => {});
       render(); return;
@@ -827,7 +834,7 @@
       if (!(await db.auth.isAdmin())){ await db.auth.signOut(); toast("Questo account non è tra gli admin.", null, true); return; }
       S.admin = true; pinOpen = false; $("in-pin").value = "";
       await db.loadAll().catch(() => {});
-      await seedIfEmpty();
+      await seedIfEmpty(); await cleanTrial();
       render(); toast("Accesso admin fatto."); return;
     }
     const v = $("in-pin").value.trim(), saved = lsGet("sp-pin");
@@ -849,6 +856,12 @@
   /* ---------- avvio ---------- */
   const savedTab = lsGet("sp-tab"); if (savedTab && document.querySelector(`[data-tab="${savedTab}"]`)) setTab(savedTab);
   /* dati di partenza nel database online: li carica l'admin al primo accesso, se il database è vuoto */
+  /* punti di prova rimasti nel database senza una prova in corso: li toglie l'admin quando entra */
+  async function cleanTrial(){
+    if (!S.admin || S.trial) return;
+    for (const e of S.points.filter(x => x.trial)) await write(() => db.doc("points/" + e.id).delete());
+    for (const x of S.extras.filter(x => x.trial)) await write(() => db.doc("extras/" + x.id).delete());
+  }
   async function seedIfEmpty(){
     if (!S.online || !S.admin || S.players.length) return;
     for (const [c, docs] of Object.entries(SEED)) for (const [id, v] of Object.entries(docs)) await write(() => db.doc(c + "/" + id).set(v));
@@ -864,12 +877,13 @@
         db = await onlineDB(); S.online = true;
         S.admin = !!(await db.auth.session()) && await db.auth.isAdmin();
         if (S.admin) await db.loadAll();
+        if (!S.admin && S.trial){ S.trial = null; lsSet("sp-prova", null); }
         db.onCeremony(onRemoteCeremony);
       } catch(_){
         db = localDB(); S.online = false; S.admin = lsGet("sp-admin") === "1";
         toast("Non riesco a collegarmi al database online: uso i dati di questo dispositivo.", null, true);
       }
-    } else db = localDB();
+    } else { db = localDB(); if (!S.admin && S.trial){ S.trial = null; lsSet("sp-prova", null); } }
     for (const c of ["players","points","activities","presets","extras","settings"]) db.collection(c).onSnapshot(snap => { S[c] = snap.docs.map(d => ({id:d.id, ...d.data()})); render(); });
     await seedIfEmpty();
     setInterval(renderCount, 1000);
