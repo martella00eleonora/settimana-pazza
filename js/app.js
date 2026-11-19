@@ -488,7 +488,7 @@
         <div class="dir-tx"><span class="role">Presidente</span><b>${esc(pres.name)}</b><span class="dir-j"><span class="jbadge">J</span>È il Jolly presidenziale</span></div></div>` : "")
       + `<div class="dir-grid">${others.map(p => `<div class="dir-c">${avatar(p, "dir-av")}<b>${esc(p.name)}</b><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`;
   }
-  function render(){ renderCount(); renderMode(); renderBoard(); renderDays(); renderLog(); renderPresets(); refreshSheet(); }
+  function render(){ renderCount(); renderMode(); renderBoard(); renderDays(); renderLog(); renderPresets(); refreshSheet(); keepAwake(wantAwake()); }
 
   /* ---------- pannelli ---------- */
   let sheet = null;
@@ -726,6 +726,73 @@
     toast(`Certificato «${name}» a ${names}: +1`, async () => { for (const r of refs) await write(() => r.delete()); await write(() => ref.delete()); });
   }
 
+  /* ---------- suoni della cerimonia (generati dal browser, niente file da scaricare) ---------- */
+  const sfx = (() => {
+    let ctx = null, master = null, noiseBuf = null;
+    let on = lsGet("sp-audio") !== "0";
+    const get = () => {
+      if (!ctx){ const C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+        ctx = new C(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination);
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      return ctx; };
+    const ready = () => on && ctx && ctx.state === "running";
+    const env = (g, t, a, peak, dur) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); };
+    const tone = (f, at, dur, type = "sine", vol = .3, f2) => { const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); env(g, t, .008, vol, dur); o.connect(g).connect(master); o.start(t); o.stop(t + dur + .05); };
+    const noise = (at, dur, vol, ftype, freq, q = 1) => { const t = ctx.currentTime + at, n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      n.buffer = noiseBuf; f.type = ftype; f.frequency.value = freq; f.Q.value = q; env(g, t, .004, vol, dur); n.connect(f).connect(g).connect(master); n.start(t, Math.random()); n.stop(t + dur + .05); };
+    const S_ = {
+      beep: (at = 0, hi) => tone(hi ? 1320 : 880, at, .22, "sine", .28),
+      chime: (at = 0) => [1568, 2093, 2637].forEach((f, i) => tone(f, at + i * .07, 1.1, "sine", .12)),
+      whoosh: (at = 0) => { noise(at, .45, .12, "bandpass", 900, .7); tone(220, at, .4, "sine", .05, 660); },
+      pop: (at = 0) => { tone(420, at, .14, "sine", .22, 980); noise(at, .08, .06, "highpass", 3000); },
+      sparkle: (at = 0) => [2637, 3136, 3520].forEach((f, i) => tone(f, at + i * .05, .35, "triangle", .06)),
+      boom: (at = 0) => { tone(110, at, .9, "sine", .45, 38); noise(at, .25, .12, "lowpass", 400); },
+      stamp: (at = 0) => { tone(150, at, .3, "sine", .4, 60); noise(at, .12, .2, "lowpass", 900); },
+      crash: (at = 0) => { noise(at, 1.8, .32, "highpass", 5000, .5); noise(at, .6, .18, "bandpass", 2500, .8); tone(80, at, .8, "sine", .4, 40); },
+      drumroll: (at, dur) => { let t = 0, gap = .09; while (t < dur){ const k = t / dur; noise(at + t, .06, .08 + .22 * k, "bandpass", 1800 + 600 * k, 1.2); t += gap; gap = Math.max(.032, gap * .965); } },
+      applause: (at, dur, vol = .5) => { for (let t = 0; t < dur; t += .012){ const k = t < .4 ? t / .4 : t > dur - 1 ? Math.max(0, dur - t) : 1; if (Math.random() < .55) noise(at + t + Math.random() * .01, .03 + Math.random() * .03, (.04 + Math.random() * .08) * k * vol, "bandpass", 1200 + Math.random() * 2400, 1.5); } },
+      fanfare: (at = 0) => { [[523,0,.18],[659,.18,.18],[784,.36,.18],[1047,.54,.9]].forEach(([f, d, l]) => { tone(f, at + d, l, "sawtooth", .09); tone(f * 2, at + d, l, "triangle", .04); });
+        [523, 659, 784].forEach(f => tone(f, at + .54, 1.2, "sawtooth", .05)); },
+      jingle: (at = 0) => { const E = 659, G = 784, C = 523, D = 587, b = .2;
+        [[E,0],[E,1],[E,2],[E,4],[E,5],[E,6],[E,8],[G,9],[C,10],[D,11],[E,12]].forEach(([f, k]) => { tone(f, at + k * b, k === 12 ? .9 : .3, "triangle", .14); tone(f * 2, at + k * b, .18, "sine", .04); });
+        for (let k = 0; k < 13; k += 2) noise(at + k * b, .05, .05, "highpass", 6000); }
+    };
+    return {
+      get on(){ return on; }, get ready(){ return ready(); },
+      unlock(){ if (!on) return; const c = get(); if (c && c.state === "suspended") c.resume(); },
+      toggle(){ on = !on; lsSet("sp-audio", on ? null : "0"); if (on) this.unlock(); else if (ctx) ctx.suspend(); return on; },
+      play(name, ...a){ if (!ready()) return; try { S_[name](...a); } catch(_){} }
+    };
+  })();
+  /* lo schermo resta acceso durante la cerimonia e mentre si aspetta che inizi */
+  let wake = null;
+  async function keepAwake(want){
+    try {
+      if (want && !wake && "wakeLock" in navigator && document.visibilityState === "visible"){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); }
+      if (!want && wake){ const w = wake; wake = null; await w.release(); }
+    } catch(_){}
+  }
+  const wantAwake = () => !!cer || (NOW() >= END.getTime() && !revealed());
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) keepAwake(wantAwake()); });
+  document.addEventListener("pointerdown", () => sfx.unlock(), {capture:true});
+  /* suoni di ogni pagina, a tempo con le animazioni */
+  function ceremonySound(page, info){
+    const P = (n, ...a) => sfx.play(n, ...a);
+    if (page === "intro"){ P("whoosh"); P("chime", .4); P("stamp", 2.2); }
+    else if (page === "numbers"){ for (let i = 0; i < info.stats; i++) P("pop", i * .35 + .55); P("chime", info.stats * .35 + 1.4); }
+    else if (page === "days"){ for (let i = 0; i < info.days; i++){ P("pop", .5 + i * .5 + .2); P("sparkle", .5 + i * .5 + .55); } }
+    else if (page.startsWith("title")){ P("whoosh"); P("chime", .25); P("sparkle", .9); }
+    else if (page === "cert-intro"){ P("boom"); P("chime", .5); }
+    else if (page.startsWith("cert")){ P("whoosh"); P("stamp", .3); P("sparkle", .6); }
+    else if (page === "rank-intro"){ P("boom"); P("chime", .7); }
+    else if (page === "podium"){ P("boom"); P("drumroll", .2, .9); P("boom", 1.15); }
+    else if (page.startsWith("pod")){ P("drumroll", 0, 1.75); P("crash", 1.75); P("applause", 1.9, 2.2, .6); }
+    else if (page === "thanks"){ P("jingle", .3); P("applause", 0, 3.5, .5); }
+    else if (info.winner){ P("drumroll", 0, 2.9); P("crash", 2.9); P("fanfare", 3.1); P("applause", 3.1, 6, 1); }
+    else P("whoosh");
+  }
+
   /* ---------- cerimonia di chiusura con fuochi d'artificio ---------- */
   let cer = null;
   /* live = prova della cerimonia mandata in diretta anche agli altri telefoni (solo online) */
@@ -735,8 +802,9 @@
     cer = {step: remote ? remote.step : 0, trial:isTrial, live:!!live, list, fw:null, remote, extra: remote ? (remote.extra || {}) : ceremonyExtra()};
     const root = document.createElement("div");
     root.id = "cer"; root.className = "cer"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Chiusura ufficiale");
-    root.innerHTML = `<canvas id="fw" aria-hidden="true"></canvas><div class="cer-in" id="cer-in"></div>`;
+    root.innerHTML = `<canvas id="fw" aria-hidden="true"></canvas><button class="cer-audio" id="cer-audio" type="button" data-audio="1"></button><div class="cer-in" id="cer-in"></div>`;
     document.body.appendChild(root);
+    keepAwake(true); audioBtn();
     renderCeremony();
     if (cer.step > 0){ startFireworks(); return; }
     /* conto alla rovescia 3-2-1 prima di aprire la chiusura ufficiale */
@@ -746,6 +814,7 @@
     const tick = i => {
       if (cer !== me) return;
       if (i >= seq.length){ cd.remove(); root.classList.remove("counting"); startFireworks(); return; }
+      sfx.play("beep", 0, i === seq.length - 1);
       cd.innerHTML = `<div class="cc-eye">Settimana Pazza \u00b7 Winter Edition 2026</div>
         <div class="cc-ball"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="cc-track"/><circle cx="60" cy="60" r="54" class="cc-ring"/></svg><span>${seq[i]}</span></div>
         <div class="cc-t">La chiusura ufficiale sta per iniziare</div>`;
@@ -756,7 +825,15 @@
   function closeCeremony(){
     if (!cer) return;
     if (!cer.remote && (!cer.trial || cer.live) && S.online) db.sendCeremony({closed:true});
-    cancelAnimationFrame(cer.fw); $("cer")?.remove(); cer = null; render();
+    cancelAnimationFrame(cer.fw); $("cer")?.remove(); cer = null; keepAwake(wantAwake()); render();
+  }
+  /* pulsante dell'audio: chi guarda dal proprio telefono deve toccarlo una volta per sentire i suoni */
+  function audioBtn(){
+    const b = $("cer-audio"); if (!b) return;
+    const need = sfx.on && !sfx.ready;
+    b.classList.toggle("need", need); b.classList.toggle("off", !sfx.on);
+    b.innerHTML = !sfx.on ? `<span aria-hidden="true">\u{1F507}</span>` : need ? `<span aria-hidden="true">\u{1F50A}</span> Attiva l'audio` : `<span aria-hidden="true">\u{1F50A}</span>`;
+    b.setAttribute("aria-label", !sfx.on ? "Attiva i suoni" : need ? "Attiva l'audio" : "Togli i suoni");
   }
   /* chi guarda dal proprio telefono riceve dall'admin la classifica già pronta, passo per passo */
   const remoteList = r => r.list.map(x => ({p:player(x.id), r:{tot:x.tot}, rank:x.rank})).filter(x => x.p);
@@ -821,7 +898,7 @@
       return out; }
     /* le pagine della cerimonia, in ordine: un tocco dell'admin = una pagina avanti per tutti */
     const X = cer.extra || {}, titles = X.titles || [];
-    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? ["cert-intro", ...certList.map((_, i) => "cert" + i)] : ["cert-none"]), "rank-intro", ...rankPages()];
+    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? ["cert-intro", ...certList.map((_, i) => "cert" + i)] : ["cert-none"]), "rank-intro", ...rankPages(), "thanks"];
     const page = pages[Math.min(st, pages.length - 1)], nextPage = pages[Math.min(st, pages.length - 1) + 1] || "";
     /* pulsante verso la pagina successiva della classifica */
     const rankOf = pg => pg.startsWith("pod") && pg !== "podium" ? Number(pg.slice(3)) : pg.startsWith("rank") && pg !== "rank-intro" ? order[Number(pg.slice(4)) - 1] : null;
@@ -832,7 +909,8 @@
     const goBtn = (label, wait) => cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big" data-cer="next" type="button">${label}</button>`;
     const pres = player("g9"), others = dir.filter(p => p !== pres);
     const msg = X.msg || "Il Direttivo della Settimana Pazza Winter Edition 2026 è riunito per la chiusura ufficiale.";
-    fireworks.calm = !page.startsWith("rank") || page === "rank-intro";
+    fireworks.calm = (!page.startsWith("rank") || page === "rank-intro") && page !== "thanks";
+    if (page === "thanks") fireworks.intense = false;
     let body;
     if (page === "intro") body = `<div class="cer-hero"><div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Winter Edition</div></div>
       <figure class="proclama">
@@ -888,6 +966,20 @@
         ${i > 0 ? `<div class="revealed"><div class="lbl">Già consegnati</div><ol>${certList.slice(0, i).reverse().map(x => { const ps = x.ids.map(player).filter(Boolean);
           return `<li><span class="rv-r">★</span>${ps[0] ? avatar(ps[0]) : ""}<b>${esc(x.label.replace(/^Certificato · /, ""))}</b><span class="rv-p">${ps.map(p => esc(p.name)).join(", ")}</span></li>`; }).join("")}</ol></div>` : ""}`;
     }
+    else if (page === "thanks"){
+      const nPts = (X.stats || []).slice(0, 3).reduce((a, x) => a + (Number(x[1]) || 0), 0), nCert = (X.stats || [])[5]?.[1] || 0;
+      body = `<div class="ty-stage"><div class="eyebrow">Settimana Pazza · Winter Edition 2026</div>
+          <h2 class="ty-h">Grazie a tutti!</h2><div class="script">per aver partecipato</div>
+          <div class="ty-faces" aria-hidden="true">${cer.list.map((x, i) => `<span style="--i:${i}">${avatar(x.p)}</span>`).join("")}</div>
+          <p class="ty-t">Sette giornate, ${nPts} tra bonus e malus${nCert ? `, ${nCert} ${nCert === 1 ? "certificato" : "certificati"}` : ""} e un numero imprecisato di risate.<br>È stata una settimana pazza davvero.</p>
+          <div class="ty-card"><div class="ty-k">Il Direttivo vi dà appuntamento alla</div>
+            <div class="ty-sun" aria-hidden="true">\u2600\uFE0F</div>
+            <div class="ty-summer">Summer Edition</div><div class="ty-year">2027</div>
+            <div class="ty-icons" aria-hidden="true">\u{1F334} \u{1F379} \u{1F3D6}\uFE0F \u{1F576}\uFE0F</div>
+            <p class="ty-s">Stesso gruppo, stessa pazzia, solo un po' più caldo.<br>Portate la crema solare (e i malus).</p></div>
+          <div class="ty-dir">${dir.map(p => avatar(p)).join("")}<span>Con affetto, il Direttivo</span></div></div>
+        ${cer.remote ? `<p class="count-cap">Buone feste! Tra poco si chiude la cerimonia…</p>` : `<button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button>`}`;
+    }
     else if (page === "rank-intro") body = `<div class="ri-stage"><div class="ri-trophy" aria-hidden="true"><span>\u{1F3C6}</span></div>
         <div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>La classifica finale</h2><div class="script">dall'ultimo posto al primo</div>
         <p class="ri-t">${cer.list.length} giocatori, sette giornate, <b>un solo vincitore</b></p>
@@ -920,7 +1012,7 @@
             <div class="win-who">${ws.map(x => `<div class="win-p">${CROWN}${avatar(x.p, "xl win-av")}<b class="win-name">${esc(x.p.name)}</b></div>`).join("")}</div>
             <div class="win-pt">${pts(ws[0].r.tot)}${ws.length > 1 ? " · pari merito" : ""}</div></div>
           <div class="win-after">${doneList(before)}
-          <button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button></div>`;
+          ${goBtn("Un ultimo saluto", "Il Direttivo ha ancora una cosa da dirvi…")}</div>`;
         if (!cer.winFx){ const me = cer; setTimeout(() => { if (cer === me) fireworks.intense = true; }, reduce ? 0 : DRUM_MS); }
         if (cer.trial) lsSet("sp-prova-chiusa", "1");
         else if (!cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
@@ -933,10 +1025,12 @@
     el.innerHTML = `${trialNote ? `<div class="cer-trial">${trialNote}</div>` : ""}${body}`;
     $("cer").classList.toggle("certmode", page.startsWith("cert"));
     $("cer").classList.toggle("rankmode", page === "rank-intro" || page.startsWith("pod"));
+    $("cer").classList.toggle("thanks", page === "thanks");
     $("cer").classList.toggle("winner", page === "rank" + order.length && order[order.length - 1] === 1);
     $("cer").scrollTop = 0;
     if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; const me = cer; setTimeout(() => { if (cer === me) confetti(); }, reduce ? 0 : DRUM_MS); }
-    countUp();
+    countUp(); audioBtn();
+    if (cer.sfxPage !== page){ cer.sfxPage = page; ceremonySound(page, {stats:(X.stats || []).length, days:(X.days || []).length, winner:$("cer").classList.contains("winner")}); }
   }
   /* i numeri della settimana salgono da zero, uno dopo l'altro */
   function countUp(){
@@ -1061,6 +1155,9 @@
     if (e.target.closest("#multi-btn")){ openMulti(""); return; }
     const rv = e.target.closest("[data-reveal]");
     if (rv){ openCeremony(false); return; }
+    if (e.target.closest("[data-audio]")){ const b = $("cer-audio");
+      if (sfx.on && !sfx.ready) sfx.unlock(); else sfx.toggle();
+      setTimeout(audioBtn, 150); if (b) b.blur(); return; }
     const cb = e.target.closest("[data-cer]");
     if (cb && cer){ if (cb.dataset.cer === "close") closeCeremony(); else { cer.step++; renderCeremony(); } return; }
     const bm = e.target.closest("[data-bmode]");
