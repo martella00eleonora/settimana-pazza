@@ -12,6 +12,8 @@
    38 = giovedì 19 novembre vale come domenica 27 dicembre (giorno 4 della prova).
    Finita la prova: rimettere 0 e cancellare i dati della prova dall'area admin. */
 const PROVA_GENERALE_GIORNI = 38;
+/* minuti in più, per arrivare a un'ora precisa della giornata (es. le 23 dei certificati) */
+const PROVA_GENERALE_MINUTI = 120;
 
 const SUPABASE_URL = "https://kwuymiofmvrocllzvrtw.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xeKoffa2WhRi81yKIzWqqQ_EOVUU0DS";

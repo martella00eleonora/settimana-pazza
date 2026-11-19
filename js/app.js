@@ -9,7 +9,8 @@
 
   /* ---------- orologio ----------
      NOW() è l'ora dell'app: quella vera, spostata in avanti durante la prova generale (js/config.js). */
-  const SHIFT_PROVA = (typeof PROVA_GENERALE_GIORNI === "number" ? PROVA_GENERALE_GIORNI : 0) * 86400000;
+  const PG_MIN = typeof PROVA_GENERALE_MINUTI === "number" ? PROVA_GENERALE_MINUTI : 0;
+  const SHIFT_PROVA = (typeof PROVA_GENERALE_GIORNI === "number" ? PROVA_GENERALE_GIORNI : 0) * 86400000 + PG_MIN * 60000;
   const NOW = () => Date.now() + SHIFT_PROVA;
 
   /* ---------- calendario ---------- */
@@ -186,7 +187,8 @@
     $("pg-bar").hidden = !SHIFT_PROVA;
     if (SHIFT_PROVA){
       const fmt = new Intl.DateTimeFormat("it-IT", {weekday:"long", day:"numeric", month:"long"});
-      $("pg-txt").textContent = `oggi, ${fmt.format(new Date())}, nell'app vale come ${fmt.format(new Date(NOW()))}`;
+      const avanti = PG_MIN ? ` (orologio avanti di ${Math.floor(PG_MIN / 60) ? Math.floor(PG_MIN / 60) + " h " : ""}${PG_MIN % 60 ? PG_MIN % 60 + " min" : ""})`.replace(" )", ")") : "";
+      $("pg-txt").textContent = `oggi, ${fmt.format(new Date())}, nell'app vale come ${fmt.format(new Date(NOW()))}${avanti}`;
       $("pg-note").textContent = "Durante la prova generale i punti sono veri e li vedono tutti. Finita la prova, cancellali da qui prima del 21 dicembre.";
     }
     $("pg-tools").hidden = !SHIFT_PROVA;
