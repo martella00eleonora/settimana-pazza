@@ -26,6 +26,7 @@ const SEED = {
     ], [["Miglior PowerPoint (voto anonimo)", 2], ["Peggior PowerPoint (voto anonimo)", -2]]),
     santa: A("2026-12-25", 4, "Secret Santa", "", ["Ognuno fa un regalo a un amico estratto a sorte."], []),
     tombola: A("2026-12-25", 5, "Tombolone", "", ["Massimo 3 partite.", "Premi casuali: un regalo a testa, portato o fatto a mano."], [["Tombola", 1]]),
+    apertura: A("2026-12-21", -1, "Apertura · Serata d'inaugurazione", "", ["Si apre ufficialmente la Settimana Pazza Winter Edition 2026."], []),
     shooting: A("2026-12-21", 0, "Shooting calendario", "Natalizio: maglioni, sciarpa, berretto, dolce vita", ["Una persona per ogni mese.", "Set natalizio, ignorante all'80%."], []),
     festa: A("2026-12-26", 7, "Festa nazionale: compleanno di Cri", "", ["La ricorrenza dell'anno: si festeggia Cri."], []),
     premi: A("2026-12-27", 8, "Premiazione finale", "", ["Chi è in testa alla classifica vince la Settimana Pazza Winter 26/27."], [])

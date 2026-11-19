@@ -355,7 +355,7 @@
   }
 
   /* ---------- programma ---------- */
-  const ICONS = {shooting:"📸", pigiama:"🧦", ppt:"📊", ape:"⛸️", santa:"🎁", tombola:"🎲", festa:"🎂", premi:"🏆"};
+  const ICONS = {apertura:"🥂", shooting:"📸", pigiama:"🧦", ppt:"📊", ape:"⛸️", santa:"🎁", tombola:"🎲", festa:"🎂", premi:"🏆"};
   const whoList = (who, day) => hiddenDay(day) ? `<span class="none">?? · si scopre il 28</span>`
     : who.length ? who.map(p => `<span class="mini" style="--pc:${colorOf(p)}" title="${esc(p.name)}">${esc(p.name)}</span>`).join("") : `<span class="none">Ancora nessuno</span>`;
   const beforeStart = () => !S.trial && NOW() < START.getTime();
@@ -741,30 +741,55 @@
   function renderCeremony(){
     const st = cer.step, el = $("cer-in");
     const dir = S.players.filter(p => p.role).sort((a,b) => ["Presidente","Vicepresidente","Assessore"].indexOf(a.role) - ["Presidente","Vicepresidente","Assessore"].indexOf(b.role));
-    const placeCard = (rank, big) => { const ps = placeOf(rank); if (!ps.length) return "";
-      return `<div class="place ${big ? "win" : ""}">${big ? CROWN : ""}<div class="pl-n">${rank}°</div>
-        <div class="pl-who">${ps.length > 3 ? `<div class="rwho" style="justify-content:center">${ps.map(x => `<span class="mini" style="--pc:${colorOf(x.p)}">${esc(x.p.name)}</span>`).join("")}</div>`
-          : ps.map(x => `<div class="pl-p">${avatar(x.p, "xl")}<b>${esc(x.p.name)}</b>${x.p.role ? `<span class="role">${esc(x.p.role)}</span>` : ""}</div>`).join("")}</div>
-        <div class="pl-pt">${ps[0].r.tot} ${Math.abs(ps[0].r.tot) === 1 ? "punto" : "punti"}${ps.length > 1 ? " · pari merito" : ""}</div></div>`; };
-    const ranks = [...new Set(cer.list.map(x => x.rank))].filter(r => r <= 3);   // posizioni da svelare, dalla terza alla prima
-    const order = ranks.slice().reverse();
+    /* si svela dall'ultima posizione alla prima, un tocco alla volta; poi la scena del vincitore */
+    const order = [...new Set(cer.list.map(x => x.rank))].sort((x,y) => y - x);
+    const pts = n => `${n} ${Math.abs(n) === 1 ? "punto" : "punti"}`;
+    const nextLabel = k => k >= order.length ? "" : order[k] === 1 ? "Svela il vincitore" : k === 0 ? `Svela l'ultimo posto (${order[0]}°)` : `Svela il ${order[k]}° posto`;
+    const nextBtn = k => cer.remote ? `<p class="count-cap">Il Direttivo sta per svelare ${order[k] === 1 ? "il vincitore" : "il " + order[k] + "° posto"}…</p>`
+      : `<button class="btn gold big ${order[k] === 1 ? "drum" : ""}" data-cer="next" type="button">${nextLabel(k)}</button>`;
+    const bigPlace = rank => { const ps = placeOf(rank);
+      return `<div class="place now ${rank <= 3 ? "m" + rank : ""}" style="--d:0s"><div class="pl-n">${rank}° posto</div>
+        <div class="pl-who">${ps.map(x => `<div class="pl-p">${avatar(x.p, "xl")}<b>${esc(x.p.name)}</b>${x.p.role ? `<span class="role">${esc(x.p.role)}</span>` : ""}</div>`).join("")}</div>
+        <div class="pl-pt">${pts(ps[0].r.tot)}${ps.length > 1 ? " · pari merito" : ""}</div></div>`; };
+    const doneList = ranks => ranks.length ? `<div class="revealed"><div class="lbl">Già svelati</div><ol>${ranks.map(r => placeOf(r).map(x =>
+      `<li class="${r <= 3 ? "m" + r : ""}"><span class="rv-r">${r}°</span>${avatar(x.p)}<b>${esc(x.p.name)}</b><span class="rv-p">${x.r.tot}</span></li>`).join("")).join("")}</ol></div>` : "";
     let body;
     if (st === 0) body = `<div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Settimana Pazza Winter Edition 2026</div>
       <div class="dir"><div class="lbl">Il Direttivo</div>${dir.map(p => `<div class="dir-p">${avatar(p)}<span><b>${esc(p.name)}</b><br><span class="role">${esc(p.role)}</span></span></div>`).join("")}</div>
-      ${cer.remote ? `<p class="count-cap">Il Direttivo sta per svelare il podio…</p>` : `<button class="btn gold big" data-cer="next" type="button">Svela ${order.length > 1 ? "il " + order[0] + "° posto" : "il vincitore"}</button>`}`;
+      <p class="count-cap">Si parte dall'ultimo posto e si sale fino al vincitore.</p>${nextBtn(0)}`;
     else {
-      const shown = order.slice(0, st);
-      const isLast = st >= order.length;
-      body = `<h2>${isLast ? "Il vincitore" : "Il podio"}</h2>
-        <div class="places">${shown.slice().reverse().map(r => placeCard(r, r === 1)).join("")}</div>
-        ${isLast ? `<div class="certs-end"><div class="lbl">Certificati consegnati</div>${cer.remote ? remoteCertsHTML(cer.remote.certs || []) : certsHTML(CERT_DAY, true)}</div>
-          <button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button>`
-          : cer.remote ? `<p class="count-cap">Il Direttivo sta per svelare il prossimo posto…</p>`
-          : `<button class="btn gold big" data-cer="next" type="button">Svela ${order[st] === 1 ? "il vincitore" : "il " + order[st] + "° posto"}</button>`}`;
-      if (isLast){ fireworks.intense = true; if (!cer.trial && !cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()})); }
+      const k = Math.min(st, order.length), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
+      if (rank !== 1){
+        body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${nextBtn(k)}${doneList([rank, ...before].slice(1))}`;
+        cer.winFx = false;
+      } else {
+        const ws = placeOf(1);
+        body = `<div class="win-stage"><div class="rays" aria-hidden="true"></div>
+            <div class="win-kicker">E il vincitore della Settimana Pazza è…</div>
+            <div class="win-who">${ws.map(x => `<div class="win-p">${CROWN}${avatar(x.p, "xl win-av")}<b class="win-name">${esc(x.p.name)}</b></div>`).join("")}</div>
+            <div class="win-pt">${pts(ws[0].r.tot)}${ws.length > 1 ? " · pari merito" : ""}</div></div>
+          <div class="win-after">${doneList(before)}
+          <div class="certs-end"><div class="lbl">Certificati consegnati</div>${cer.remote ? remoteCertsHTML(cer.remote.certs || []) : certsHTML(CERT_DAY, true)}</div>
+          <button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button></div>`;
+        fireworks.intense = true;
+        if (!cer.trial && !cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
+      }
     }
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
+    $("cer").classList.toggle("winner", st > 0 && order[Math.min(st, order.length) - 1] === 1);
+    $("cer").scrollTop = 0;
+    if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; confetti(); }
+  }
+  /* pioggia di coriandoli dorati sulla scena del vincitore */
+  function confetti(){
+    if (reduce) return;
+    const root = $("cer"), cols = ["#f0c14f","#fff3c4","#e0404a","#5fd19a","#6fb3ff","#f3f6fb"];
+    for (let i = 0; i < 90; i++){
+      const c = document.createElement("i"); c.className = "conf";
+      c.style.cssText = `left:${Math.random()*100}%;--c:${cols[i % cols.length]};--t:${2.4 + Math.random()*2.2}s;--dl:${Math.random()*1.8}s;--x:${(Math.random()-.5)*160}px;--r:${360 + Math.random()*720}deg;${i % 4 === 0 ? "border-radius:50%;width:8px;height:8px;" : ""}`;
+      root.appendChild(c); setTimeout(() => c.remove(), 7000);
+    }
   }
   const fireworks = {intense:false};
   function startFireworks(){
@@ -986,7 +1011,13 @@
     for (const e of S.points.filter(x => x.trial)) await write(() => db.doc("points/" + e.id).delete());
     for (const x of S.extras.filter(x => x.trial)) await write(() => db.doc("extras/" + x.id).delete());
   }
+  /* attività aggiunte ai dati di partenza dopo il primo caricamento: l'admin le porta nel database */
+  async function addMissingSeed(){
+    if (!S.admin || !S.activities.length) return;
+    for (const [id, v] of Object.entries(SEED.activities)) if (!S.activities.some(a => a.id === id)) await write(() => db.doc("activities/" + id).set(v));
+  }
   async function seedIfEmpty(){
+    await addMissingSeed();
     if (!S.online || !S.admin || S.players.length) return;
     for (const [c, docs] of Object.entries(SEED)) for (const [id, v] of Object.entries(docs)) await write(() => db.doc(c + "/" + id).set(v));
     toast("Database online preparato con giocatori, programma e bonus/malus.");
