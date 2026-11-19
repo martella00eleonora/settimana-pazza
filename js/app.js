@@ -817,7 +817,7 @@
           <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
     /* le pagine della cerimonia, in ordine: un tocco dell'admin = una pagina avanti per tutti */
     const X = cer.extra || {}, titles = X.titles || [];
-    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), "certs", ...order.map((_, i) => "rank" + (i + 1))];
+    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? certList.map((_, i) => "cert" + i) : ["cert-none"]), ...order.map((_, i) => "rank" + (i + 1))];
     const page = pages[Math.min(st, pages.length - 1)];
     const goBtn = (label, wait) => cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big" data-cer="next" type="button">${label}</button>`;
     const pres = player("g9"), others = dir.filter(p => p !== pres);
@@ -836,15 +836,19 @@
       ${others.length ? `<div class="pr-dir"><div class="lbl">Con il Direttivo</div><div class="pr-row">${others.map(p => `<span class="pr-m">${avatar(p)}<b>${esc(p.name)}</b><span class="role">${esc(p.role)}</span></span>`).join("")}</div></div>` : ""}
       ${goBtn("La settimana in numeri", "Il Direttivo sta per aprire la chiusura ufficiale…")}`;
     else if (page === "numbers") body = `<div class="cer-hero"><div class="eyebrow">21 — 27 dicembre</div><h2>La settimana in numeri</h2></div>
-      <div class="bb-wrap">${[0, 1].map(r => `<div class="bb-row">${(X.stats || []).slice(r * 3, r * 3 + 3).map(([l, n, k], i) => `<div class="bb ${k}" style="--d:${(r * 3 + i) * .35}s;--h:${[14, 26, 18][i]}px">
-          <span class="bb-hook" aria-hidden="true"></span><span class="bb-cap" aria-hidden="true"></span><span class="bb-ball"><b class="stat-n" data-to="${n}" data-delay="${(r * 3 + i) * 350 + 500}">0</b></span><span class="bb-l">${esc(l)}</span></div>`).join("")}</div>`).join("")}</div>
+      <div class="bb-wrap">${[0, 1].map(r => `<div class="bb-row"><svg class="bb-cord" viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-6 6 Q150 54 306 6" class="c1"/><path d="M-6 6 Q150 54 306 6" class="c2"/>
+          ${Array.from({length:11}, (_, j) => { const x = 15 + j * 27, t = (x + 6) / 312, y = 6 + 96 * t * (1 - t); return `<circle cx="${x}" cy="${y.toFixed(1)}" r="2.6" class="lt" style="--k:${j}"/>`; }).join("")}</svg>
+          <span class="bb-bow l" aria-hidden="true"></span><span class="bb-bow r" aria-hidden="true"></span>
+          ${(X.stats || []).slice(r * 3, r * 3 + 3).map(([l, n, k], i) => `<div class="bb ${k}" style="--d:${(r * 3 + i) * .35}s;--h:${[8, 16, 8][i]}px">
+          <span class="bb-hook" aria-hidden="true"></span><span class="bb-cap" aria-hidden="true"></span><span class="bb-ball"><i class="bb-band" aria-hidden="true"></i><b class="stat-n" data-to="${n}" data-delay="${(r * 3 + i) * 350 + 500}">0</b></span><span class="bb-l">${esc(l)}</span></div>`).join("")}</div>`).join("")}</div>
       ${goBtn("Le sette giornate", "Si ripercorrono le giornate…")}`;
     else if (page === "days") body = `<div class="cer-hero"><div class="eyebrow">Il nostro calendario dell'Avvento</div><h2>Le sette giornate</h2></div>
       <div class="advent">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
-        return `<div class="door ${i === 6 ? "wide" : ""}" style="--d:${.4 + i * .45}s">
-          <div class="door-in"><span class="dn-ic" aria-hidden="true">${acts.map(a => ICONS[a.id] || "✦").join(" ") || "❄"}</span>
-            <span class="dn-d">${esc(wdShort(g.d))} ${dt(g.d).getDate()}${DAYNAME[g.d] ? ` · ${esc(DAYNAME[g.d])}` : ""}</span>
-            <b>${acts.length ? acts.map(a => esc(a.title)).join(" + ") : "Giornata libera"}</b>
+        return `<div class="door ${i === 0 ? "wide" : ""}" style="--d:${.4 + i * .45}s">
+          <div class="door-in"><span class="dn-num" aria-hidden="true">${dt(g.d).getDate()}</span>
+            <span class="dn-d">${esc(wdLong(g.d).replace(/ \d+ dicembre$/, ""))}${DAYNAME[g.d] ? ` · ${esc(DAYNAME[g.d])}` : ""}</span>
+            <span class="dn-acts">${acts.length ? acts.map(a => `<span class="dn-a"><i aria-hidden="true">${ICONS[a.id] || "✦"}</i><b>${esc(a.title)}</b></span>`).join("") : `<span class="dn-a"><i aria-hidden="true">❄</i><b>Giornata libera</b></span>`}</span>
             <span class="dn-n">${g.n ? `${g.n} ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</span></div>
           <div class="door-f ${i % 2 ? "g" : "r"}" aria-hidden="true"><span>${dt(g.d).getDate()}</span></div></div>`; }).join("")}</div>
       ${goBtn("I titoli speciali", "Arrivano i titoli speciali…")}`;
@@ -859,8 +863,18 @@
         ${goBtn(last ? "I certificati" : "Prossimo titolo", last ? "Arrivano i certificati…" : "Il Direttivo sta per svelare il prossimo titolo…")}
         ${i > 0 ? `<div class="revealed"><div class="lbl">Già assegnati</div><ol>${titles.slice(0, i).reverse().map(x => `<li><span class="rv-r">${x.ic}</span>${avatar(player(x.ids[0]))}<b>${esc(x.name)}</b><span class="rv-p">${x.ids.map(player).filter(Boolean).map(p => esc(p.name)).join(", ")}</span></li>`).join("")}</ol></div>` : ""}`;
     }
-    else if (page === "certs") body = `<div class="cer-hero"><div class="eyebrow">Domenica 27 dicembre</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
-      ${certCards()}${nextBtn(0)}`;
+    else if (page.startsWith("cert")){
+      const i = page === "cert-none" ? -1 : Number(page.slice(4)), c = certList[i], last = i < 0 || i === certList.length - 1;
+      const who = c ? c.ids.map(player).filter(Boolean) : [];
+      body = `<div class="cer-hero"><div class="eyebrow">Certificato${certList.length ? ` · ${i + 1} di ${certList.length}` : ""}</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
+        ${c ? `<div class="tbig cbig"><span class="seal xl" aria-hidden="true">★</span><div class="cb-k">Il Direttivo conferisce il certificato</div>
+            <div class="tb-name">${esc(c.label.replace(/^Certificato · /, ""))}</div><div class="cb-k">a</div>
+            <div class="tb-who">${who.map(p => `<span class="tb-p">${avatar(p, "xl")}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`
+          : `<div class="lempty"><span aria-hidden="true">★</span><b>Nessun certificato consegnato</b><p>Quest'anno niente attestati.</p></div>`}
+        ${last ? nextBtn(0) : goBtn("Prossimo certificato", "Il Direttivo sta per consegnare il prossimo certificato…")}
+        ${i > 0 ? `<div class="revealed"><div class="lbl">Già consegnati</div><ol>${certList.slice(0, i).reverse().map(x => { const ps = x.ids.map(player).filter(Boolean);
+          return `<li><span class="rv-r">★</span>${ps[0] ? avatar(ps[0]) : ""}<b>${esc(x.label.replace(/^Certificato · /, ""))}</b><span class="rv-p">${ps.map(p => esc(p.name)).join(", ")}</span></li>`; }).join("")}</ol></div>` : ""}`;
+    }
     else {
       const k = Number(page.slice(4)), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
       if (rank !== 1){
