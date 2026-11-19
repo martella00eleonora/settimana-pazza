@@ -258,7 +258,7 @@
     }
     const list = ranked();
     renderPodium(list);
-    if (!list.length){ $("board").innerHTML = `<li class="empty">Nessun giocatore.</li>`; return; }
+    if (!list.length){ $("board").innerHTML = `<li class="empty">${S.online ? "La classifica si prepara al primo accesso dell'admin. Torna a guardare tra poco." : "Nessun giocatore."}</li>`; return; }
     const before = {};
     if (!reduce) $("board").querySelectorAll("[data-pid]").forEach(el => before[el.dataset.pid] = el.getBoundingClientRect().top);
     const stag = S.stagger; S.stagger = false;
