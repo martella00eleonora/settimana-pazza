@@ -817,7 +817,7 @@
           <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
     /* le pagine della cerimonia, in ordine: un tocco dell'admin = una pagina avanti per tutti */
     const X = cer.extra || {}, titles = X.titles || [];
-    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? certList.map((_, i) => "cert" + i) : ["cert-none"]), ...order.map((_, i) => "rank" + (i + 1))];
+    const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? ["cert-intro", ...certList.map((_, i) => "cert" + i)] : ["cert-none"]), ...order.map((_, i) => "rank" + (i + 1))];
     const page = pages[Math.min(st, pages.length - 1)];
     const goBtn = (label, wait) => cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big" data-cer="next" type="button">${label}</button>`;
     const pres = player("g9"), others = dir.filter(p => p !== pres);
@@ -846,10 +846,10 @@
     else if (page === "days") body = `<div class="cer-hero"><div class="eyebrow">Il nostro calendario dell'Avvento</div><h2>Le sette giornate</h2></div>
       <div class="advent">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
         return `<div class="door ${i === 0 ? "wide" : ""}" style="--d:${.4 + i * .45}s">
-          <div class="door-in"><span class="dn-num" aria-hidden="true">${dt(g.d).getDate()}</span>
-            <span class="dn-d">${esc(wdLong(g.d).replace(/ \d+ dicembre$/, ""))}${DAYNAME[g.d] ? ` · ${esc(DAYNAME[g.d])}` : ""}</span>
+          <div class="door-in gift w${i % 4}"><span class="gift-bow" aria-hidden="true"></span>
+            <span class="dn-head"><span class="dn-num">${dt(g.d).getDate()}</span><span class="dn-d">${esc(wdLong(g.d).replace(/ \d+ dicembre$/, ""))}${DAYNAME[g.d] ? `<br><span>${esc(DAYNAME[g.d])}</span>` : ""}</span></span>
             <span class="dn-acts">${acts.length ? acts.map(a => `<span class="dn-a"><i aria-hidden="true">${ICONS[a.id] || "✦"}</i><b>${esc(a.title)}</b></span>`).join("") : `<span class="dn-a"><i aria-hidden="true">❄</i><b>Giornata libera</b></span>`}</span>
-            <span class="dn-n">${g.n ? `${g.n} ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</span></div>
+            <span class="dn-n">${g.n ? `<b>${g.n}</b> ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</span></div>
           <div class="door-f ${i % 2 ? "g" : "r"}" aria-hidden="true"><span>${dt(g.d).getDate()}</span></div></div>`; }).join("")}</div>
       ${goBtn("I titoli speciali", "Arrivano i titoli speciali…")}`;
     else if (page.startsWith("title")){
@@ -863,6 +863,10 @@
         ${goBtn(last ? "I certificati" : "Prossimo titolo", last ? "Arrivano i certificati…" : "Il Direttivo sta per svelare il prossimo titolo…")}
         ${i > 0 ? `<div class="revealed"><div class="lbl">Già assegnati</div><ol>${titles.slice(0, i).reverse().map(x => `<li><span class="rv-r">${x.ic}</span>${avatar(player(x.ids[0]))}<b>${esc(x.name)}</b><span class="rv-p">${x.ids.map(player).filter(Boolean).map(p => esc(p.name)).join(", ")}</span></li>`).join("")}</ol></div>` : ""}`;
     }
+    else if (page === "cert-intro") body = `<div class="ci-stage"><span class="seal xxl" aria-hidden="true">★</span>
+        <div class="eyebrow">Domenica 27 dicembre · ore 23</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div>
+        <p class="ci-t">${certList.length} ${certList.length === 1 ? "certificato" : "certificati"} per chi ha lasciato il segno</p></div>
+      ${goBtn("Il primo certificato", "Il Direttivo sta per consegnare il primo certificato…")}`;
     else if (page.startsWith("cert")){
       const i = page === "cert-none" ? -1 : Number(page.slice(4)), c = certList[i], last = i < 0 || i === certList.length - 1;
       const who = c ? c.ids.map(player).filter(Boolean) : [];
@@ -895,6 +899,7 @@
     }
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
+    $("cer").classList.toggle("certmode", page.startsWith("cert"));
     $("cer").classList.toggle("winner", page === "rank" + order.length && order[order.length - 1] === 1);
     $("cer").scrollTop = 0;
     if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; confetti(); }

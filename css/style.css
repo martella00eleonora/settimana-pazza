@@ -951,3 +951,43 @@ section.view > *{min-width:0}
 .dn-a b{letter-spacing:0;font-size:13px}
 .door-in{padding-inline:10px}
 .dn-a{padding:5px 6px}
+
+/* --- numeri: scritte più grandi --- */
+.bb-l{font-size:15px;max-width:13ch;margin-top:12px}
+.bb-ball .stat-n{font-size:min(11vw,48px)}
+/* --- le sette giornate come pacchi regalo --- */
+.door{min-height:0}
+.door-in.gift{display:grid;grid-template-rows:auto 1fr auto;align-content:stretch;justify-items:stretch;gap:10px;text-align:left;
+  padding:30px 12px 12px;border:0;border-radius:14px;--wrap:#c42b37;--wrap2:#a8202b;--rib:#f0c14f;
+  background:
+    linear-gradient(90deg,transparent calc(50% - 5px),var(--rib) calc(50% - 5px) calc(50% + 5px),transparent calc(50% + 5px)) top/100% 22px no-repeat,
+    repeating-linear-gradient(135deg,var(--wrap) 0 10px,var(--wrap2) 10px 20px) top/100% 22px no-repeat,
+    linear-gradient(180deg,#1b2c45,#111c2e);
+  box-shadow:0 0 0 2px var(--wrap),0 10px 22px rgba(0,0,0,.4)}
+.door-in.gift::after{inset:28px 5px 5px;border-radius:10px}
+.door-in.w1{--wrap:#1f6b47;--wrap2:#185a3b}
+.door-in.w2{--wrap:#d9a630;--wrap2:#b8861d;--rib:#c42b37}
+.door-in.w3{--wrap:#2d5fa8;--wrap2:#244d8a}
+.gift-bow{position:absolute;left:50%;top:-12px;transform:translateX(-50%);width:44px;height:24px;z-index:2;
+  background:radial-gradient(circle at 50% 60%,var(--rib) 5px,transparent 6px),
+    radial-gradient(ellipse 11px 9px at 28% 55%,var(--rib) 90%,transparent 100%),
+    radial-gradient(ellipse 11px 9px at 72% 55%,var(--rib) 90%,transparent 100%);filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.dn-head{display:flex;align-items:center;gap:10px;justify-self:start}
+.dn-head .dn-num{width:40px;height:40px;font-size:18px;flex:0 0 auto}
+.dn-head .dn-d{font-size:12px;line-height:1.3;text-align:left}
+.dn-head .dn-d span{color:var(--muted);letter-spacing:.04em}
+.dn-acts{align-self:center}
+.dn-n{justify-self:end;font-size:12px}
+.dn-n b{font-size:15px}
+.door.wide .dn-acts{max-width:none}
+/* --- stacco netto prima dei certificati --- */
+.cer.certmode{background:radial-gradient(800px 560px at 50% 10%,#5a1a24,#2a0b12 55%,#0b0407)}
+.ci-stage{display:grid;justify-items:center;gap:10px;padding:40px 0 10px}
+.seal.xxl{width:120px;height:120px;font-size:58px;box-shadow:0 0 0 10px rgba(240,193,79,.15),0 0 0 22px rgba(240,193,79,.06),0 0 60px rgba(240,193,79,.6)}
+.ci-t{margin:6px 0 0;font-size:17px;color:#ffd6d9}
+.cer.certmode .tbig{background:radial-gradient(420px 220px at 50% 0,rgba(240,193,79,.25),transparent 70%),#2b1219;border-color:rgba(240,193,79,.6)}
+.cer.certmode .revealed ol{background:rgba(255,255,255,.05)}
+@media (prefers-reduced-motion:no-preference){
+  .ci-stage .seal{animation:sealPop 1s .1s cubic-bezier(.3,1.8,.5,1) backwards}
+  .ci-stage h2,.ci-stage .script,.ci-t{animation:fadeUp .8s .7s both}
+}
