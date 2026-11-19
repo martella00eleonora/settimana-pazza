@@ -144,8 +144,23 @@
   /* ---------- conto alla rovescia e chiusura ---------- */
   let lastCount = "";
   /* le 7 giornate come palline di Natale appese a un filo */
-  const ornaments = td => { const i = DAYS.indexOf(td);
-    return `<div class="orn" aria-label="Giornata ${i + 1} di 7">${DAYS.map((d,k) => `<span class="o ${k < i ? "done" : k === i ? "now" : ""}" style="--k:${k}"><i></i><b>${dt(d).getDate()}</b></span>`).join("")}</div>`; };
+  /* le 7 giornate come palline appese a un filo vero: ogni gancio parte dal punto della curva */
+  const ornaments = td => { const i = DAYS.indexOf(td), W = 360, y0 = 10, sag = 34;
+    const yAt = x => { const t = x / W; return y0 + 4 * sag * t * (1 - t); };
+    const balls = DAYS.map((d,k) => { const x = 30 + k * 50, yc = yAt(x), len = 10 + (k % 2) * 8, cy = yc + len + 18;
+      const st = k < i ? "done" : k === i ? "now" : "next";
+      return `<g class="ob ${st}" style="transform-origin:${x}px ${yc}px;--k:${k}">
+        <line x1="${x}" y1="${yc}" x2="${x}" y2="${cy - 17}" class="hook"/>
+        <rect x="${x - 4.5}" y="${cy - 20}" width="9" height="6" rx="1.5" class="cap"/>
+        <circle cx="${x}" cy="${cy}" r="15" class="ball" fill="url(#og-${st})"/>
+        <path d="M${x - 9} ${cy - 6} a12 12 0 0 1 8 -6" class="shine"/>
+        <text x="${x}" y="${cy + 5}" class="num">${dt(d).getDate()}</text></g>`; }).join("");
+    const lights = Array.from({length:13}, (_, k) => { const x = 5 + k * 27.5; return `<circle cx="${x}" cy="${yAt(x)}" r="2.2" class="bead" style="--k:${k}"/>`; }).join("");
+    return `<div class="orn" role="img" aria-label="Giornata ${i + 1} di 7"><svg viewBox="0 0 ${W} 112" aria-hidden="true">
+      <defs><radialGradient id="og-done" cx=".35" cy=".3"><stop offset="0" stop-color="#fff1b8"/><stop offset=".45" stop-color="#f0c14f"/><stop offset="1" stop-color="#a8781e"/></radialGradient>
+        <radialGradient id="og-now" cx=".35" cy=".3"><stop offset="0" stop-color="#ffb3b8"/><stop offset=".45" stop-color="#e0404a"/><stop offset="1" stop-color="#8e1c26"/></radialGradient>
+        <radialGradient id="og-next" cx=".35" cy=".3"><stop offset="0" stop-color="#5a7da6"/><stop offset=".5" stop-color="#2b4a70"/><stop offset="1" stop-color="#162a44"/></radialGradient></defs>
+      <path d="M0 ${y0} Q${W / 2} ${y0 + 2 * sag} ${W} ${y0}" class="cord"/>${lights}${balls}</svg></div>`; };
   function renderCount(){
     const now = new Date(NOW());
     let html;
@@ -191,13 +206,19 @@
       $("pg-txt").textContent = `oggi, ${fmt.format(new Date())}, nell'app vale come ${fmt.format(new Date(NOW()))}${avanti}`;
       $("pg-note").textContent = "Durante la prova generale i punti sono veri e li vedono tutti. Finita la prova, cancellali da qui prima del 21 dicembre.";
     }
-    $("pg-tools").hidden = !SHIFT_PROVA;
+    const pgLeft = !SHIFT_PROVA && NOW() < START.getTime() && (S.points.some(x => !x.trial) || S.extras.some(x => !x.trial) || S.settings.some(x => x.id === "main"));
+    if (pgLeft) $("pg-note").textContent = "Sono rimasti nel database i punti, i certificati e la cerimonia della prova generale, e chi apre il sito li vede. Cancellali prima del 21 dicembre.";
+    $("pg-tools").hidden = !SHIFT_PROVA && !pgLeft;
+    $("adm-fab").classList.toggle("warn", S.admin && pgLeft);
+    $("adm-status").hidden = !S.admin;
     $("in-email").hidden = !S.online;
     $("in-pin").inputMode = S.online ? "text" : "numeric";
     $("in-pin").placeholder = S.online ? "Password" : lsGet("sp-pin") ? "PIN admin" : "Scegli un PIN";
     $("pin-go").textContent = S.online ? "Accedi" : lsGet("sp-pin") ? "Entra" : "Imposta";
-    $("trial-sel").parentElement.hidden = frozen();
-    $("trial-sel").innerHTML = `<option value="">Prova una giornata…</option>` + DAYS.map(d => `<option value="${d}" ${d===S.trial?"selected":""}>${esc(wdShort(d))} ${dt(d).getDate()}</option>`).join("") + `<option value="closing">Prova la chiusura del 28</option>`;
+    $("trial-chips").parentElement.hidden = frozen();
+    $("trial-chips").innerHTML = DAYS.map(d => `<button type="button" class="tchip ${d === S.trial ? "on" : ""}" data-trial="${d}"><span>${esc(wdShort(d))}</span><b>${dt(d).getDate()}</b></button>`).join("")
+      + `<button type="button" class="tchip wide" data-trial="closing"><span>prova la</span><b>Cerimonia</b></button>`
+      + (S.trial ? `<button type="button" class="tchip wide out" data-trial=""><span>finisci</span><b>Esci dalla prova</b></button>` : "");
     $("cert-btn").hidden = !certOpen();
     $("trial-bar").hidden = !S.trial;
     if (S.trial) $("trial-day").textContent = dayLabel(S.trial);
@@ -251,9 +272,10 @@
     if (!live()) return "";
     const i = DAYS.indexOf(currentDay()); if (i < 1) return "";
     const y = DAYS[i-1];
-    if (hiddenDay(y) || lsGet("sp-recap-" + y + (S.trial ? "-prova" : ""))) return "";
+    if (hiddenDay(y)) return "";
     const pts = allPoints().filter(e => dayOf(e) === y && player(e.playerId));
     if (!pts.length) return "";
+    if (lsGet("sp-recap-" + y + (S.trial ? "-prova" : ""))) return `<button class="recap-min" data-recapx="${y}" data-show="1" type="button"><span class="lbl" style="margin:0">Ieri in breve</span><b>${esc(dayLabel(y))}</b><span class="rm-go">Mostra ▾</span></button>`;
     const sum = {}, mal = {};
     for (const e of pts){ sum[e.playerId] = (sum[e.playerId]||0) + (Number(e.delta)||0); if (Number(e.delta) < 0 && !e.auto) mal[e.playerId] = (mal[e.playerId]||0) + 1; }
     const top = Object.entries(sum).sort((a,b) => b[1]-a[1]).slice(0,3);
@@ -333,6 +355,7 @@
   }
 
   /* ---------- programma ---------- */
+  const ICONS = {shooting:"📸", pigiama:"🧦", ppt:"📊", ape:"⛸️", santa:"🎁", tombola:"🎲", festa:"🎂", premi:"🏆"};
   const whoList = (who, day) => hiddenDay(day) ? `<span class="none">?? · si scopre il 28</span>`
     : who.length ? who.map(p => `<span class="mini" style="--pc:${colorOf(p)}" title="${esc(p.name)}">${esc(p.name)}</span>`).join("") : `<span class="none">Ancora nessuno</span>`;
   const beforeStart = () => !S.trial && NOW() < START.getTime();
@@ -356,12 +379,11 @@
       const foot = hiddenDay(a.day) ? "Punti coperti fino alla chiusura"
         : best && best[1] > 0 ? `In testa qui: <b>${esc(player(best[0]).name)}</b> (${sign(best[1])})` : (Object.keys(sums).length ? "Per ora solo malus in questa attività" : "Ancora nessun punto in questa attività");
       return `<li class="act">
-        <h3>${esc(a.title)}</h3>
-        ${a.dress ? `<div class="tags"><span class="tag dress">Dress code · ${esc(a.dress)}</span></div>` : ""}
+        <div class="act-h"><span class="act-ic" aria-hidden="true">${ICONS[a.id] || "✦"}</span><div class="act-ht"><h3>${esc(a.title)}</h3>${a.dress ? `<span class="tag dress">Dress code · ${esc(a.dress)}</span>` : ""}</div></div>
         ${(a.notes||[]).length ? `<ul class="notes">${a.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
-        ${(a.rules||[]).length ? `<div><div class="lbl">Punti della giornata</div><div class="rgroups">${a.rules.map((r,i) => `<div class="rgroup"><div class="rtop"><span class="rule ${r.delta>=0?"b":"m"}"><span class="v">${sign(r.delta)}</span>${esc(r.label)}</span>
-            ${isNow ? `<button class="btn small gold admin-only" data-mark="r:${esc(a.id)}:${i}">Segna chi</button>` : lock(a.day)}</div>
-            <div class="rwho">${whoList(takers(a.id, r.label, a.day), a.day)}</div></div>`).join("")}</div></div>` : ""}
+        ${(a.rules||[]).length ? `<div><div class="lbl">Punti della giornata</div><ul class="rlist">${a.rules.map((r,i) => `<li class="rrow ${r.delta>=0?"b":"m"}"><span class="lpt ${r.delta>=0?"b":"m"}">${sign(r.delta)}</span>
+            <span class="rt"><b>${esc(r.label)}</b><span class="rwho">${whoList(takers(a.id, r.label, a.day), a.day)}</span></span>
+            ${isNow ? `<button class="btn small gold admin-only" data-mark="r:${esc(a.id)}:${i}">Segna chi</button>` : lock(a.day)}</li>`).join("")}</ul></div>` : ""}
         ${a.id === "premi" ? `<div><div class="lbl">Certificati della serata</div>${certsHTML(a.day)}${certOpen() && S.day === cd ? `<button class="btn gold admin-only" data-cert="1" type="button" style="margin-top:8px">Consegna certificati</button>` : ""}</div>` : ""}
         <div class="foot"><span>${foot}</span></div>
       </li>`;
@@ -369,8 +391,8 @@
     const body = acts.length ? `<ul class="acts">${acts.map(card).join("")}</ul>`
       : `<div class="free"><b>Giornata libera</b>Niente in programma, per ora.</div>`;
     const ex = extrasOf(S.day);
-    const minis = ex.length ? `<div class="act minis"><div class="lbl" style="margin:0">Mini-sfide della giornata</div><div class="rgroups">${ex.map(x => `<div class="rgroup"><div class="rtop"><span class="rule ${x.delta>=0?"b":"m"}"><span class="v">${sign(x.delta)}</span>${esc(x.label)}</span>${isNow ? `<button class="btn small gold admin-only" data-mark="x:${esc(x.id)}">Segna chi</button>` : ""}</div>
-        <div class="rwho">${whoList(takers("", x.label, S.day), S.day)}</div></div>`).join("")}</div></div>` : "";
+    const minis = ex.length ? `<div class="act minis"><div class="act-h"><span class="act-ic" aria-hidden="true">⚡</span><div class="act-ht"><h3>Mini-sfide</h3><span class="tag">create al volo durante la giornata</span></div></div><ul class="rlist">${ex.map(x => `<li class="rrow ${x.delta>=0?"b":"m"}"><span class="lpt ${x.delta>=0?"b":"m"}">${sign(x.delta)}</span>
+        <span class="rt"><b>${esc(x.label)}</b><span class="rwho">${whoList(takers("", x.label, S.day), S.day)}</span></span>${isNow ? `<button class="btn small gold admin-only" data-mark="x:${esc(x.id)}">Segna chi</button>` : ""}</li>`).join("")}</ul></div>` : "";
     $("dayview").innerHTML = head + body + minis;
   }
   /* certificati consegnati in una giornata, con chi li ha ricevuti */
@@ -847,7 +869,7 @@
     const bd = e.target.closest("[data-bday]");
     if (bd){ S.boardDay = bd.dataset.bday; renderBoard(); return; }
     const rx = e.target.closest("[data-recapx]");
-    if (rx){ lsSet("sp-recap-" + rx.dataset.recapx + (S.trial ? "-prova" : ""), "1"); renderBoard(); return; }
+    if (rx){ lsSet("sp-recap-" + rx.dataset.recapx + (S.trial ? "-prova" : ""), rx.dataset.show ? null : "1"); renderBoard(); enter($("recap")); return; }
     if (e.target.closest("[data-cert]")){ openCert(); return; }
     const cs = e.target.closest("[data-csel]");
     if (cs && sheet?.cert){ const s = sheet.cert.sel, id = cs.dataset.csel; s.has(id) ? s.delete(id) : s.add(id); refreshSheet(); return; }
@@ -879,9 +901,7 @@
     if (jo){ if (jo.dataset.state === "used"){ warnTaken(sheet.playerId, "jolly"); return; } const pid = sheet.playerId; armOrRun(jo, () => jollyMany([pid], jo)); return; }
   });
   document.addEventListener("change", e => {
-    if (e.target.id === "trial-sel" && e.target.value === "closing"){ e.target.value = S.trial || ""; closeAdm(); openCeremony(true); return; }
-    if (e.target.id === "trial-sel") closeAdm();
-    if (e.target.id === "trial-sel" && e.target.value) setTrial(e.target.value);
+
   });
   document.addEventListener("submit", e => { if (e.target.id === "f-cert" && sheet?.cert){ e.preventDefault(); giveCert(); } });
   document.addEventListener("submit", async e => {
@@ -914,6 +934,13 @@
   function closeAdm(){ $("adm-panel").hidden = true; }
   $("adm-fab").addEventListener("click", openAdm);
   $("adm-close").addEventListener("click", closeAdm);
+  $("trial-chips").addEventListener("click", e => {
+    const b = e.target.closest("[data-trial]"); if (!b) return;
+    const v = b.dataset.trial; closeAdm();
+    if (v === "closing"){ openCeremony(true); return; }
+    if (!v){ if (S.trial) setTrial(null); return; }
+    if (v !== S.trial) setTrial(v);
+  });
   $("adm-panel").addEventListener("click", e => { if (e.target.id === "adm-panel") closeAdm(); });
   /* cancella punti, mini-sfide, certificati e cerimonia della prova generale */
   $("pg-clean").addEventListener("click", e => armOrRun(e.currentTarget, async () => {

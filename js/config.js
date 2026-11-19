@@ -8,12 +8,11 @@
                         decidono cosa si può leggere e scrivere.
    La chiave "service_role" NON va mai messa qui. */
 /* PROVA GENERALE: sposta il calendario dell'app di N giorni, per provare la settimana in anticipo.
-   Prova a tappe: si cambia questo numero per passare da una giornata all'altra.
-   38 = giovedì 19 novembre vale come domenica 27 dicembre (giorno 4 della prova).
-   Finita la prova: rimettere 0 e cancellare i dati della prova dall'area admin. */
-const PROVA_GENERALE_GIORNI = 38;
+   0 = calendario vero. La prova a tappe del 19 novembre 2026 è finita.
+   Se si rifà: dopo, rimettere 0 e cancellare i dati della prova dall'area admin. */
+const PROVA_GENERALE_GIORNI = 0;
 /* minuti in più, per arrivare a un'ora precisa della giornata (es. le 23 dei certificati) */
-const PROVA_GENERALE_MINUTI = 177;
+const PROVA_GENERALE_MINUTI = 0;
 
 const SUPABASE_URL = "https://kwuymiofmvrocllzvrtw.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xeKoffa2WhRi81yKIzWqqQ_EOVUU0DS";
