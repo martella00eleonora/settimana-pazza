@@ -9,9 +9,9 @@
    La chiave "service_role" NON va mai messa qui. */
 /* PROVA GENERALE: sposta il calendario dell'app di N giorni, per provare la settimana in anticipo.
    Prova a tappe: si cambia questo numero per passare da una giornata all'altra.
-   34 = giovedì 19 novembre vale come mercoledì 23 dicembre (giorno 2 della prova).
+   37 = giovedì 19 novembre vale come sabato 26 dicembre (giorno 3 della prova).
    Finita la prova: rimettere 0 e cancellare i dati della prova dall'area admin. */
-const PROVA_GENERALE_GIORNI = 34;
+const PROVA_GENERALE_GIORNI = 37;
 
 const SUPABASE_URL = "https://kwuymiofmvrocllzvrtw.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xeKoffa2WhRi81yKIzWqqQ_EOVUU0DS";

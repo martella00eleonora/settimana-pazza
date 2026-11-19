@@ -265,12 +265,27 @@
         ${climb && climb[1] > 0 ? `<span><b>${esc(climb[0].name)}</b> sale di ${climb[1]} ${climb[1] === 1 ? "posto" : "posti"}</span>` : ""}
         ${worst ? `<span>Più malus: <b>${esc(player(worst[0]).name)}</b> (${worst[1]})</span>` : ""}
         <span>Malus Ele scattati: <b>${ele}</b></span><span>Jolly usati: <b>${jol}</b></span>
-      </div></div>`;
+      </div>
+      <div><div class="lbl">Bonus e malus di ieri</div>${dayBreakdownHTML(y)}</div></div>`;
+  }
+  /* bonus e malus presi in una giornata: quale, quante volte, a chi */
+  function dayBreakdownHTML(day){
+    const g = {};
+    for (const e of allPoints()){
+      if (dayOf(e) !== day || !player(e.playerId)) continue;
+      const k = e.reason || (Number(e.delta) >= 0 ? "Bonus" : "Malus"), x = g[k] = g[k] || {tot:0, who:{}};
+      x.tot += Number(e.delta) || 0; x.who[e.playerId] = (x.who[e.playerId] || 0) + 1;
+    }
+    const rows = Object.entries(g).sort((a,b) => b[1].tot - a[1].tot);
+    if (!rows.length) return `<p class="none" style="margin:0">Nessun bonus o malus in questa giornata.</p>`;
+    return `<ul class="dbreak">${rows.map(([k,x]) => `<li><span class="pill ${x.tot >= 0 ? "b" : "m"}">${sign(x.tot) || "0"}</span><span class="dk">${esc(k)}</span>
+      <span class="rwho">${Object.entries(x.who).map(([id,n]) => `<span class="mini" style="--pc:${colorOf(player(id))}">${esc(player(id).name)}${n > 1 ? " ×" + n : ""}</span>`).join("")}</span></li>`).join("")}</ul>`;
   }
 
   function renderBoard(){
     $("recap").innerHTML = recapHTML();
     $("bmode").innerHTML = ["week","day"].map(m => `<button type="button" data-bmode="${m}" aria-pressed="${S.boardMode === m}">${m === "week" ? "Settimana" : "Per giornata"}</button>`).join("");
+    $("day-break").innerHTML = "";
     if (S.boardMode === "day"){ renderDayBoard(); return; }
     if (hidden()){
       $("podium").innerHTML = `<div class="covered"><div class="q" aria-hidden="true">??</div><b>Classifica coperta</b><p>Dal 26 dicembre i punti li vede solo l'admin. Si scopre tutto il 28 a mezzanotte, con la chiusura ufficiale.</p></div>`;
@@ -305,13 +320,14 @@
     if (!days.length){ $("podium").innerHTML = ""; $("board").innerHTML = `<li class="empty">La classifica di giornata parte lunedì 21.</li>`; return; }
     if (!days.includes(S.boardDay)) S.boardDay = days[days.length - 1];
     $("podium").innerHTML = `<div class="dchips">${days.map(d => `<button type="button" data-bday="${d}" aria-pressed="${d === S.boardDay}">${esc(wdShort(d))} ${dt(d).getDate()}</button>`).join("")}</div>`;
-    if (hiddenDay(S.boardDay)){ $("board").innerHTML = `<li class="covered"><div class="q" aria-hidden="true">??</div><b>Giornata coperta</b><p>Si scopre il 28 a mezzanotte.</p></li>`; return; }
-    const t = {}; for (const p of S.players) t[p.id] = 0;
-    for (const e of allPoints()) if (dayOf(e) === S.boardDay && t[e.playerId] != null) t[e.playerId] += Number(e.delta)||0;
+    if (hiddenDay(S.boardDay)){ $("board").innerHTML = `<li class="covered"><div class="q" aria-hidden="true">??</div><b>Giornata coperta</b><p>Si scopre il 28 a mezzanotte.</p></li>`; $("day-break").innerHTML = ""; return; }
+    const t = {}, bon = {}, mal = {}; for (const p of S.players){ t[p.id] = 0; bon[p.id] = 0; mal[p.id] = 0; }
+    for (const e of allPoints()) if (dayOf(e) === S.boardDay && t[e.playerId] != null){ const d = Number(e.delta)||0; t[e.playerId] += d; if (d > 0) bon[e.playerId] += d; else mal[e.playerId] += d; }
+    $("day-break").innerHTML = `<div class="lbl">Bonus e malus della giornata</div>${dayBreakdownHTML(S.boardDay)}`;
     const list = [...S.players].sort((a,b) => t[b.id] - t[a.id] || a.name.localeCompare(b.name));
     let rank = 0, prev = null;
     $("board").innerHTML = list.map((p,i) => { if (t[p.id] !== prev){ rank = i + 1; prev = t[p.id]; }
-      return rowHTML(p, rank, t[p.id] > 0 ? "+" + t[p.id] : t[p.id], `nella giornata di ${esc(wdShort(S.boardDay))} ${dt(S.boardDay).getDate()}`, "r" + rank, {lbl:"in giornata"}); }).join("");
+      return rowHTML(p, rank, t[p.id] > 0 ? "+" + t[p.id] : t[p.id], (bon[p.id] || mal[p.id]) ? `${bon[p.id] ? `<span class="bp">${sign(bon[p.id])}</span>` : ""}${mal[p.id] ? `<span class="mp">${sign(mal[p.id])}</span>` : ""}` : `<span class="nope">nessun punto</span>`, "r" + rank, {lbl:"in giornata"}); }).join("");
   }
 
   /* ---------- programma ---------- */
