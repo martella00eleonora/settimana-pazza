@@ -474,11 +474,12 @@
   }
 
   /* il Direttivo: il Presidente in evidenza, gli altri in fila */
-  function renderDirettivo(){
+  function renderDirettivo(){ $("dir-list").innerHTML = direttivoHTML(); }
+  function direttivoHTML(){
     const order = ["Presidente","Vicepresidente","Assessore"];
     const dir = S.players.filter(p => p.role).sort((a,b) => order.indexOf(a.role) - order.indexOf(b.role));
     const pres = dir.find(p => p.role === "Presidente"), others = dir.filter(p => p !== pres);
-    $("dir-list").innerHTML = (pres ? `<div class="dir-pres"><div class="dir-ph">${CROWN}${avatar(pres, "dir-av big")}</div>
+    return (pres ? `<div class="dir-pres"><div class="dir-ph">${CROWN}${avatar(pres, "dir-av big")}</div>
         <div class="dir-tx"><span class="role">Presidente</span><b>${esc(pres.name)}</b><span class="dir-j"><span class="jbadge">J</span>È il Jolly presidenziale</span></div></div>` : "")
       + `<div class="dir-grid">${others.map(p => `<div class="dir-c">${avatar(p, "dir-av")}<b>${esc(p.name)}</b><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`;
   }
@@ -716,7 +717,21 @@
     root.id = "cer"; root.className = "cer"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Chiusura ufficiale");
     root.innerHTML = `<canvas id="fw" aria-hidden="true"></canvas><div class="cer-in" id="cer-in"></div>`;
     document.body.appendChild(root);
-    startFireworks(); renderCeremony();
+    renderCeremony();
+    if (cer.step > 0){ startFireworks(); return; }
+    /* conto alla rovescia 3-2-1 prima di aprire la chiusura ufficiale */
+    root.classList.add("counting");
+    const cd = document.createElement("div"); cd.className = "cer-count"; root.appendChild(cd);
+    const me = cer, seq = ["3", "2", "1"];
+    const tick = i => {
+      if (cer !== me) return;
+      if (i >= seq.length){ cd.remove(); root.classList.remove("counting"); startFireworks(); return; }
+      cd.innerHTML = `<div class="cc-eye">Settimana Pazza \u00b7 Winter Edition 2026</div>
+        <div class="cc-ball"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="cc-track"/><circle cx="60" cy="60" r="54" class="cc-ring"/></svg><span>${seq[i]}</span></div>
+        <div class="cc-t">La chiusura ufficiale sta per iniziare</div>`;
+      setTimeout(() => tick(i + 1), reduce ? 700 : 1000);
+    };
+    tick(0);
   }
   function closeCeremony(){
     if (!cer) return;
@@ -753,14 +768,24 @@
         <div class="pl-pt">${pts(ps[0].r.tot)}${ps.length > 1 ? " · pari merito" : ""}</div></div>`; };
     const doneList = ranks => ranks.length ? `<div class="revealed"><div class="lbl">Già svelati</div><ol>${ranks.map(r => placeOf(r).map(x =>
       `<li class="${r <= 3 ? "m" + r : ""}"><span class="rv-r">${r}°</span>${avatar(x.p)}<b>${esc(x.p.name)}</b><span class="rv-p">${x.r.tot}</span></li>`).join("")).join("")}</ol></div>` : "";
+    /* passi: 0 apertura, 1 certificati, poi le posizioni dall'ultima alla prima */
+    const certList = cer.remote ? (cer.remote.certs || []) : certsOf(CERT_DAY).map(c => ({label:c.label, ids:takers("premi", c.label, CERT_DAY).map(p => p.id)}));
+    const certCards = () => !certList.length ? `<div class="lempty"><span aria-hidden="true">★</span><b>Nessun certificato consegnato</b><p>Quest'anno niente attestati.</p></div>`
+      : `<div class="cert-grid">${certList.map((c, i) => `<div class="cert-card" style="--d:${i * .15}s"><span class="seal big" aria-hidden="true">★</span>
+          <div class="cc-name">${esc(c.label.replace(/^Certificato · /, ""))}</div>
+          <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
     let body;
-    if (st === 0) body = `<div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Settimana Pazza Winter Edition 2026</div>
-      <div class="dir"><div class="lbl">Il Direttivo</div>${dir.map(p => `<div class="dir-p">${avatar(p)}<span><b>${esc(p.name)}</b><br><span class="role">${esc(p.role)}</span></span></div>`).join("")}</div>
-      <p class="count-cap">Si parte dall'ultimo posto e si sale fino al vincitore.</p>${nextBtn(0)}`;
+    if (st === 0) body = `<div class="cer-hero"><div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Winter Edition</div></div>
+      <div class="garland cer-garland" aria-hidden="true"></div>
+      <div class="dir-card cer-dir"><div class="lbl">Il Direttivo</div><div class="dir-list">${direttivoHTML()}</div></div>
+      <p class="count-cap">Prima i certificati, poi la classifica: dall'ultimo posto fino al vincitore.</p>
+      ${cer.remote ? `<p class="count-cap">Il Direttivo sta per consegnare i certificati…</p>` : `<button class="btn gold big" data-cer="next" type="button">Vedi i certificati</button>`}`;
+    else if (st === 1) body = `<div class="cer-hero"><div class="eyebrow">Domenica 27 dicembre</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
+      ${certCards()}${nextBtn(0)}`;
     else {
-      const k = Math.min(st, order.length), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
+      const k = Math.min(st - 1, order.length), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
       if (rank !== 1){
-        body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${nextBtn(k)}${doneList([rank, ...before].slice(1))}`;
+        body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${nextBtn(k)}${doneList(before)}`;
         cer.winFx = false;
       } else {
         const ws = placeOf(1);
@@ -769,7 +794,6 @@
             <div class="win-who">${ws.map(x => `<div class="win-p">${CROWN}${avatar(x.p, "xl win-av")}<b class="win-name">${esc(x.p.name)}</b></div>`).join("")}</div>
             <div class="win-pt">${pts(ws[0].r.tot)}${ws.length > 1 ? " · pari merito" : ""}</div></div>
           <div class="win-after">${doneList(before)}
-          <div class="certs-end"><div class="lbl">Certificati consegnati</div>${cer.remote ? remoteCertsHTML(cer.remote.certs || []) : certsHTML(CERT_DAY, true)}</div>
           <button class="btn gold big" data-cer="close" type="button">Chiudi e mostra la classifica</button></div>`;
         fireworks.intense = true;
         if (!cer.trial && !cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
@@ -777,7 +801,7 @@
     }
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
-    $("cer").classList.toggle("winner", st > 0 && order[Math.min(st, order.length) - 1] === 1);
+    $("cer").classList.toggle("winner", st > 1 && order[Math.min(st - 1, order.length) - 1] === 1);
     $("cer").scrollTop = 0;
     if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; confetti(); }
   }
