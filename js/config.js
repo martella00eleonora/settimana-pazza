@@ -7,5 +7,5 @@
    - SUPABASE_ANON_KEY: la chiave "anon" / "public". Può stare nel sito: le regole del database
                         decidono cosa si può leggere e scrivere.
    La chiave "service_role" NON va mai messa qui. */
-const SUPABASE_URL = "";
+const SUPABASE_URL = "https://kwuymiofmvrocllzvrtw.supabase.co";
 const SUPABASE_ANON_KEY = "";
