@@ -206,7 +206,7 @@
       $("pg-txt").textContent = `oggi, ${fmt.format(new Date())}, nell'app vale come ${fmt.format(new Date(NOW()))}${avanti}`;
       $("pg-note").textContent = "Durante la prova generale i punti sono veri e li vedono tutti. Finita la prova, cancellali da qui prima del 21 dicembre.";
     }
-    const pgLeft = !SHIFT_PROVA && NOW() < START.getTime() && (S.points.some(x => !x.trial) || S.extras.some(x => !x.trial) || S.settings.some(x => x.id === "main"));
+    const pgLeft = !SHIFT_PROVA && NOW() < START.getTime() && (S.points.some(x => !x.trial) || S.extras.some(x => !x.trial) || S.settings.length > 0);
     if (pgLeft) $("pg-note").textContent = "Sono rimasti nel database i punti, i certificati e la cerimonia della prova generale, e chi apre il sito li vede. Cancellali prima del 21 dicembre.";
     $("pg-tools").hidden = !SHIFT_PROVA && !pgLeft;
     $("adm-fab").classList.toggle("warn", S.admin && pgLeft);
@@ -661,6 +661,7 @@
       const trialPts = S.points.filter(e => e.trial);
       for (const e of trialPts) await write(() => db.doc("points/" + e.id).delete());
       for (const x of S.extras.filter(x => x.trial)) await write(() => db.doc("extras/" + x.id).delete());
+      if (S.settings.some(x => x.id === "messaggio-prova")) await write(() => db.doc("settings/messaggio-prova").delete());
       S.trial = null; lsSet("sp-prova", null);
       toast(trialPts.length ? `Prova finita: cancellati ${trialPts.length} punti di prova.` : "Prova finita.");
     } else { S.trial = day; lsSet("sp-prova", day); S.day = day; toast(`Prova della giornata di ${dayLabel(day)}. I punti di prova si cancellano quando esci.`); }
@@ -680,6 +681,11 @@
         <button class="btn gold" type="submit" id="ce-go">Consegna</button>
       </form>
       <div><div class="lbl">Consegnati stasera</div><div id="ce-list"></div></div>
+      <form id="f-msg" class="msg-box">
+        <div class="msg-h">${PHOTOS.g9 ? avatar(player("g9")) : ""}<div><div class="lbl" style="margin:0">Messaggio del Presidente</div><p>Lo leggono tutti all'apertura della chiusura ufficiale.</p></div></div>
+        <textarea id="msg-text" rows="4" maxlength="600" placeholder="Il Direttivo dichiara chiusa la Settimana Pazza Winter Edition 2026…" aria-label="Messaggio del Presidente">${esc(presMsg())}</textarea>
+        <button class="btn ghost" type="submit" id="msg-go">${presMsg() ? "Aggiorna il messaggio" : "Salva il messaggio"}</button>
+      </form>
       <div class="sh-foot"><span></span><button class="btn ghost" id="sh-close">Chiudi</button></div>
     </div></div>`;
     refreshSheet();
@@ -692,6 +698,14 @@
     $("ce-go").textContent = n ? `Consegna +1 a ${n} ${n === 1 ? "persona" : "persone"}` : "Tocca chi riceve il certificato";
     $("ce-go").disabled = !n;
     $("ce-list").innerHTML = certsHTML(CERT_DAY, true);
+  }
+  /* il messaggio del Presidente: in prova va in un documento a parte, che si cancella uscendo dalla prova */
+  const MSG_ID = () => S.trial ? "messaggio-prova" : "messaggio";
+  const presMsg = () => (S.trial && S.settings.find(x => x.id === "messaggio-prova")?.text) || S.settings.find(x => x.id === "messaggio")?.text || "";
+  async function savePresMsg(){
+    const text = $("msg-text").value.trim();
+    const ok = await write(() => text ? db.doc("settings/" + MSG_ID()).set({text, at:NOW(), ...(S.trial ? {trial:true} : {})}) : db.doc("settings/" + MSG_ID()).delete());
+    if (ok){ $("msg-go").textContent = text ? "Aggiorna il messaggio" : "Salva il messaggio"; toast(text ? "Messaggio del Presidente salvato." : "Messaggio del Presidente tolto."); }
   }
   async function giveCert(){
     const c = sheet.cert, name = $("ce-label").value.trim();
@@ -712,7 +726,7 @@
   function openCeremony(isTrial, remote){
     const list = remote ? remoteList(remote) : ranked();
     if (!list.length) return;
-    cer = {step: remote ? remote.step : 0, trial:isTrial, list, fw:null, remote};
+    cer = {step: remote ? remote.step : 0, trial:isTrial, list, fw:null, remote, extra: remote ? (remote.extra || {}) : ceremonyExtra()};
     const root = document.createElement("div");
     root.id = "cer"; root.className = "cer"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Chiusura ufficiale");
     root.innerHTML = `<canvas id="fw" aria-hidden="true"></canvas><div class="cer-in" id="cer-in"></div>`;
@@ -740,15 +754,39 @@
   }
   /* chi guarda dal proprio telefono riceve dall'admin la classifica già pronta, passo per passo */
   const remoteList = r => r.list.map(x => ({p:player(x.id), r:{tot:x.tot}, rank:x.rank})).filter(x => x.p);
+  function ceremonyExtra(){
+    const pts = allPoints().filter(e => player(e.playerId));
+    const isCert = e => (e.reason || "").startsWith("Certificato · ");
+    const isMiniPt = e => !e.activityId && S.extras.some(x => x.type !== "cert" && x.day === dayOf(e) && x.label === baseReason(e));
+    const stats = [
+      ["Bonus assegnati", pts.filter(e => Number(e.delta) > 0 && !e.jolly && !isCert(e)).length, "b"],
+      ["Malus presi", pts.filter(e => Number(e.delta) < 0 && !e.auto).length, "m"],
+      ["Malus Ele scattati", pts.filter(e => e.auto).length, "m"],
+      ["Jolly del Presidente", pts.filter(e => e.jolly).length, "j"],
+      ["Mini-sfide giocate", S.extras.filter(x => x.type !== "cert").length, "x"],
+      ["Certificati consegnati", certsOf(CERT_DAY).length, "c"]];
+    const days = DAYS.map(d => ({d, acts:actsOf(d).map(a => a.id), n:pts.filter(e => dayOf(e) === d && !e.auto).length}));
+    const best = (filter) => { const c = {}; for (const e of pts) if (filter(e)) c[e.playerId] = (c[e.playerId] || 0) + 1;
+      const top = Math.max(0, ...Object.values(c)); return top ? {n:top, ids:Object.keys(c).filter(id => c[id] === top)} : null; };
+    const titles = [
+      ["Re dei malus", "😈", best(e => Number(e.delta) < 0 && !e.auto), ["malus preso", "malus presi"]],
+      ["Collezionista di bonus", "🌟", best(e => Number(e.delta) > 0 && !e.jolly && !isCert(e)), ["bonus preso", "bonus presi"]],
+      ["Il più graziato dal Jolly", "🃏", best(e => e.jolly), ["Jolly ricevuto", "Jolly ricevuti"]],
+      ["Campione delle mini-sfide", "⚡", best(e => isMiniPt(e) && Number(e.delta) > 0), ["mini-sfida vinta", "mini-sfide vinte"]],
+      ["Bestemmiatore ufficiale", "🤬", best(e => baseReason(e).startsWith("Malus Jacopo")), ["volta", "volte"]],
+      ["Tenacia di ferro", "🔥", best(e => e.auto), ["Malus Ele", "Malus Ele"]]
+    ].filter(t => t[2]).map(([name, ic, b, w]) => ({name, ic, n:b.n, ids:b.ids, what: b.n === 1 ? w[0] : w[1]}));
+    return {stats, days, titles, msg:presMsg()};
+  }
   function ceremonyPayload(){
-    return {step:cer.step, list:cer.list.map(x => ({id:x.p.id, tot:x.r.tot, rank:x.rank})),
+    return {step:cer.step, extra:cer.extra, list:cer.list.map(x => ({id:x.p.id, tot:x.r.tot, rank:x.rank})),
       certs:certsOf(CERT_DAY).map(c => ({label:c.label, ids:takers("premi", c.label, CERT_DAY).map(p => p.id)}))};
   }
   function onRemoteCeremony(pl){
     if (S.admin) return;
     if (pl.closed){ closeCeremony(); return; }
     if (!cer) openCeremony(false, pl);
-    else { cer.remote = pl; cer.list = remoteList(pl); cer.step = pl.step; renderCeremony(); }
+    else { cer.remote = pl; cer.list = remoteList(pl); cer.step = pl.step; cer.extra = pl.extra || cer.extra; renderCeremony(); }
   }
   const remoteCertsHTML = certs => !certs.length ? `<p class="none" style="margin:0">Nessun certificato consegnato.</p>`
     : `<ul class="certs">${certs.map(c => `<li><span class="seal" aria-hidden="true">★</span><span class="cn">${esc(c.label.replace(/^Certificato · /, ""))}</span><span class="rwho">${c.ids.map(player).filter(Boolean).map(p => `<span class="mini" style="--pc:${colorOf(p)}">${esc(p.name)}</span>`).join("")}</span></li>`).join("")}</ul>`;
@@ -774,16 +812,37 @@
       : `<div class="cert-grid">${certList.map((c, i) => `<div class="cert-card" style="--d:${i * .15}s"><span class="seal big" aria-hidden="true">★</span>
           <div class="cc-name">${esc(c.label.replace(/^Certificato · /, ""))}</div>
           <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
+    const X = cer.extra || {}, PRE = 5;   // passi prima della classifica: apertura, numeri, giornate, titoli, certificati
+    const goBtn = (label, wait) => cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big" data-cer="next" type="button">${label}</button>`;
+    const pres = player("g9");
     let body;
     if (st === 0) body = `<div class="cer-hero"><div class="eyebrow">28 dicembre 2026 · mezzanotte</div><h2>Chiusura ufficiale</h2><div class="script">Winter Edition</div></div>
       <div class="garland cer-garland" aria-hidden="true"></div>
       <div class="dir-card cer-dir"><div class="lbl">Il Direttivo</div><div class="dir-list">${direttivoHTML()}</div></div>
-      <p class="count-cap">Prima i certificati, poi la classifica: dall'ultimo posto fino al vincitore.</p>
-      ${cer.remote ? `<p class="count-cap">Il Direttivo sta per consegnare i certificati…</p>` : `<button class="btn gold big" data-cer="next" type="button">Vedi i certificati</button>`}`;
-    else if (st === 1) body = `<div class="cer-hero"><div class="eyebrow">Domenica 27 dicembre</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
+      ${X.msg ? `<figure class="pres-msg"><span class="pm-q" aria-hidden="true">“</span><blockquote>${esc(X.msg).replace(/\n/g, "<br>")}</blockquote>
+        <figcaption>${pres ? avatar(pres) : ""}<span><b>${esc(pres ? pres.name : "Il Presidente")}</b><span class="role">Presidente</span></span></figcaption></figure>` : ""}
+      ${goBtn("La settimana in numeri", "Il Direttivo sta per aprire la chiusura ufficiale…")}`;
+    else if (st === 1) body = `<div class="cer-hero"><div class="eyebrow">21 — 27 dicembre</div><h2>La settimana in numeri</h2><div class="script">quanto ne abbiamo combinate</div></div>
+      <div class="stat-grid">${(X.stats || []).map(([l, n, k], i) => `<div class="stat ${k}" style="--d:${i * .18}s"><b class="stat-n" data-to="${n}">0</b><span>${esc(l)}</span></div>`).join("")}</div>
+      ${goBtn("Le sette giornate", "Si ripercorrono le giornate…")}`;
+    else if (st === 2) body = `<div class="cer-hero"><div class="eyebrow">Il nostro viaggio</div><h2>Le sette giornate</h2></div>
+      <ol class="journey">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
+        return `<li style="--d:${i * .22}s"><span class="jb"><span>${dt(g.d).getDate()}</span></span>
+          <div class="jt"><span class="jd">${esc(wdLong(g.d).replace(/ \d+ dicembre$/, ""))}${DAYNAME[g.d] ? ` · ${esc(DAYNAME[g.d])}` : ""}</span>
+          <b>${acts.length ? acts.map(a => `${ICONS[a.id] || "✦"} ${esc(a.title)}`).join("<br>") : "Giornata libera"}</b>
+          <span class="jn">${g.n ? `${g.n} ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</span></div></li>`; }).join("")}</ol>
+      ${goBtn("I titoli speciali", "Arrivano i titoli speciali…")}`;
+    else if (st === 3) body = `<div class="cer-hero"><div class="eyebrow">Assegnati dal Direttivo</div><h2>Titoli speciali</h2><div class="script">senza guardare i punti</div></div>
+      ${(X.titles || []).length ? `<div class="title-grid">${X.titles.map((t, i) => `<div class="tcard" style="--d:${i * .2}s"><span class="t-ic" aria-hidden="true">${t.ic}</span>
+          <div class="t-name">${esc(t.name)}</div>
+          <div class="t-who">${t.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div>
+          <span class="t-n">${t.n} ${esc(t.what)}</span></div>`).join("")}</div>`
+        : `<div class="lempty"><span aria-hidden="true">❄</span><b>Nessun titolo</b><p>Settimana tranquilla, a quanto pare.</p></div>`}
+      ${goBtn("I certificati", "Arrivano i certificati…")}`;
+    else if (st === 4) body = `<div class="cer-hero"><div class="eyebrow">Domenica 27 dicembre</div><h2>I certificati</h2><div class="script">consegnati dal Direttivo</div></div>
       ${certCards()}${nextBtn(0)}`;
     else {
-      const k = Math.min(st - 1, order.length), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
+      const k = Math.min(st - PRE + 1, order.length), rank = order[k - 1], before = order.slice(0, k - 1).reverse();
       if (rank !== 1){
         body = `<div class="eyebrow">Classifica finale · ${k} di ${order.length}</div>${bigPlace(rank)}${nextBtn(k)}${doneList(before)}`;
         cer.winFx = false;
@@ -801,9 +860,21 @@
     }
     if (!cer.trial && !cer.remote && S.online && S.admin) db.sendCeremony(ceremonyPayload());
     el.innerHTML = `${cer.trial ? `<div class="cer-trial">Prova della cerimonia: la classifica non viene scoperta davvero</div>` : ""}${body}`;
-    $("cer").classList.toggle("winner", st > 1 && order[Math.min(st - 1, order.length) - 1] === 1);
+    $("cer").classList.toggle("winner", st >= PRE && order[Math.min(st - PRE + 1, order.length) - 1] === 1);
     $("cer").scrollTop = 0;
     if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; confetti(); }
+    countUp();
+  }
+  /* i numeri della settimana salgono da zero, uno dopo l'altro */
+  function countUp(){
+    document.querySelectorAll("#cer .stat-n[data-to]").forEach((el, i) => {
+      const to = Number(el.dataset.to) || 0; el.removeAttribute("data-to");
+      if (reduce || !to){ el.textContent = to; return; }
+      const t0 = performance.now() + i * 180, dur = 1100;
+      const step = t => { if (!el.isConnected) return; const k = Math.min(1, Math.max(0, (t - t0) / dur)); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+      setTimeout(() => { if (el.isConnected) el.textContent = to; }, i * 180 + dur + 400);
+    });
   }
   /* pioggia di coriandoli dorati sulla scena del vincitore */
   function confetti(){
@@ -952,7 +1023,7 @@
   document.addEventListener("change", e => {
 
   });
-  document.addEventListener("submit", e => { if (e.target.id === "f-cert" && sheet?.cert){ e.preventDefault(); giveCert(); } });
+  document.addEventListener("submit", e => { if (e.target.id === "f-cert" && sheet?.cert){ e.preventDefault(); giveCert(); } if (e.target.id === "f-msg"){ e.preventDefault(); savePresMsg(); } });
   document.addEventListener("submit", async e => {
     if (e.target.id !== "f-quick" || !sheet?.multi) return;
     e.preventDefault();
@@ -993,7 +1064,7 @@
   $("adm-panel").addEventListener("click", e => { if (e.target.id === "adm-panel") closeAdm(); });
   /* cancella punti, mini-sfide, certificati e cerimonia della prova generale */
   $("pg-clean").addEventListener("click", e => armOrRun(e.currentTarget, async () => {
-    const all = [...S.points.map(x => "points/" + x.id), ...S.extras.map(x => "extras/" + x.id), ...(S.settings.some(x => x.id === "main") ? ["settings/main"] : [])];
+    const all = [...S.points.map(x => "points/" + x.id), ...S.extras.map(x => "extras/" + x.id), ...S.settings.map(x => "settings/" + x.id)];
     for (const path of all) await write(() => db.doc(path).delete());
     closeAdm(); toast(`Prova generale cancellata: ${all.length} voci tolte.`);
   }));
