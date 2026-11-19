@@ -186,7 +186,7 @@
     $("trial-bar").hidden = !S.trial;
     if (S.trial) $("trial-day").textContent = dayLabel(S.trial);
     $("multi-btn").disabled = !assignOpen();
-    $("dir-list").innerHTML = S.players.filter(p => p.role).sort((a,b) => ["Presidente","Vicepresidente","Assessore"].indexOf(a.role) - ["Presidente","Vicepresidente","Assessore"].indexOf(b.role)).map(p => `<div class="dir-p">${avatar(p)}<span><b>${esc(p.name)}</b><br><span class="role">${esc(p.role)}${p.role === "Presidente" ? " · Jolly presidenziale" : ""}</span></span></div>`).join("");
+    renderDirettivo();
     $("hint-board").textContent = !S.admin ? (beforeStart() ? "La Settimana Pazza si apre lunedì 21 dicembre: da lì parte la classifica." : hidden() ? "Tocca un nome per vedere i bonus e malus presi fino al 25." : "Tocca un nome per vedere i bonus e malus che ha preso.")
       : live() && !assignOpen() ? "Sono le 23: ora si consegnano solo i certificati. A mezzanotte la chiusura ufficiale."
       : live() ? `Giornata in corso: ${dayLabel(currentDay())}. Tocca un nome o assegna a più persone insieme.${covered() ? " La classifica è coperta: i punti li vedi solo tu." : ""}`
@@ -253,7 +253,7 @@
     if (S.boardMode === "day"){ renderDayBoard(); return; }
     if (hidden()){
       $("podium").innerHTML = `<div class="covered"><div class="q" aria-hidden="true">??</div><b>Classifica coperta</b><p>Dal 26 dicembre i punti li vede solo l'admin. Si scopre tutto il 28 a mezzanotte, con la chiusura ufficiale.</p></div>`;
-      $("board").innerHTML = [...S.players].sort((a,b) => a.name.localeCompare(b.name)).map(p => rowHTML(p, "?", "??", mineTag(p), "")).join("");
+      $("board").innerHTML = [...S.players].sort((a,b) => a.name.localeCompare(b.name)).map(p => rowHTML(p, "?", "??", "punti coperti", "")).join("");
       return;
     }
     const list = ranked();
@@ -264,7 +264,7 @@
     const stag = S.stagger; S.stagger = false;
     $("board").innerHTML = list.map(({p, r, rank}) => {
       const mt = mineTag(p);
-      return rowHTML(p, rank, r.tot, `<span class="b">${r.bon ? sign(r.bon) : "+0"}</span> · <span class="m">${r.mal ? sign(r.mal) : "−0"}</span>${mt ? " · " + mt : ""}`, "r" + rank);
+      return rowHTML(p, rank, r.tot, `<span class="b">${r.bon ? sign(r.bon) : "+0"}</span> · <span class="m">${r.mal ? sign(r.mal) : "−0"}</span>`, "r" + rank);
     }).join("");
     list.forEach(({p, r}, i) => {
       const el = $("board").querySelector(`[data-pid="${CSS.escape(p.id)}"]`);
@@ -370,14 +370,28 @@
 
   /* ---------- regole ---------- */
   function renderPresets(){
-    const kind = p => p.auto ? "automatico" : p.once ? "1 volta al giorno" : "cumulabile";
-    const row = p => `<li class="pitem">${player(p.owner) ? avatar(player(p.owner)) : `<span class="pill ${p.delta>=0?"b":"m"}">${sign(p.delta)}</span>`}<span>${esc(p.label)} <span class="pill ${p.delta>=0?"b":"m"}" style="min-width:0">${sign(p.delta)}</span><span class="kind">${kind(p)}</span></span><span></span></li>`;
+    const kind = p => p.auto ? `<span class="ktag auto">automatico</span>` : p.once ? `<span class="ktag">1 volta al giorno</span>` : `<span class="ktag cum">cumulabile</span>`;
+    const cap = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+    const row = p => { const o = player(p.owner), name = p.label.split(" · ")[0];
+      return `<li class="bm ${p.delta >= 0 ? "b" : "m"}">
+        ${o ? avatar(o, "bm-av") : `<span class="av bm-av" style="--pc:var(--card-2)">${p.delta >= 0 ? "+" : "−"}</span>`}
+        <span class="bm-t"><span class="bm-k">${esc(name)}${o && !name.toLowerCase().includes(o.name.toLowerCase()) ? ` <span class="bm-o">di ${esc(o.name)}</span>` : ""}</span><b>${esc(cap(p.short || p.label))}</b>${kind(p)}</span>
+        <span class="bm-v">${sign(p.delta)}</span></li>`; };
     const sorted = [...S.presets].sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
     const b = sorted.filter(p => p.delta >= 0), m = sorted.filter(p => p.delta < 0);
     $("pl-b").innerHTML = b.length ? b.map(row).join("") : `<li class="empty">Nessun bonus.</li>`;
     $("pl-m").innerHTML = m.length ? m.map(row).join("") : `<li class="empty">Nessun malus.</li>`;
   }
 
+  /* il Direttivo: il Presidente in evidenza, gli altri in fila */
+  function renderDirettivo(){
+    const order = ["Presidente","Vicepresidente","Assessore"];
+    const dir = S.players.filter(p => p.role).sort((a,b) => order.indexOf(a.role) - order.indexOf(b.role));
+    const pres = dir.find(p => p.role === "Presidente"), others = dir.filter(p => p !== pres);
+    $("dir-list").innerHTML = (pres ? `<div class="dir-pres"><div class="dir-ph">${CROWN}${avatar(pres, "dir-av big")}</div>
+        <div class="dir-tx"><span class="role">Presidente</span><b>${esc(pres.name)}</b><span class="dir-j"><span class="jbadge">J</span>È il Jolly presidenziale</span></div></div>` : "")
+      + `<div class="dir-grid">${others.map(p => `<div class="dir-c">${avatar(p, "dir-av")}<b>${esc(p.name)}</b><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`;
+  }
   function render(){ renderCount(); renderMode(); renderBoard(); renderDays(); renderLog(); renderPresets(); refreshSheet(); }
 
   /* ---------- pannelli ---------- */

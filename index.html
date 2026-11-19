@@ -60,15 +60,20 @@
   </section>
 
   <section class="view" id="v-regole" hidden>
-    <div class="vh"><h2>Bonus e malus</h2><p>Ognuno ha il suo bonus o malus, che vale per tutta la settimana. Quelli da «1 volta al giorno» si possono prendere una sola volta per giornata; i cumulabili quante volte capita. Le regole di ogni giornata, una volta al giorno, sono nel Programma.</p></div>
-    <div class="dir-card"><div class="lbl">Il Direttivo · Settimana Pazza Winter Edition 2026</div><div id="dir-list" class="dir-list"></div></div>
+    <div class="vh"><h2>Bonus e malus</h2><p>Ognuno ha il suo bonus o malus personale, valido tutta la settimana. Le regole delle singole giornate sono nel Programma.</p></div>
+    <div class="dir-card"><div class="lbl">Il Direttivo</div><div id="dir-list" class="dir-list"></div></div>
     <div class="jolly-card">
       <div class="ic" aria-hidden="true">J</div>
-      <div><h3>Jolly presidenziale</h3><p>Il Jolly è Giorgio, il Presidente. Trasforma l'ultimo malus della giornata in +1; a chi quel giorno non ha malus vale +2. Al massimo una volta al giorno per persona. Si assegna dal pannello del giocatore, dallo Storico o a più persone insieme. Il Malus Ele già scattato resta.</p></div>
+      <div><h3>Jolly presidenziale</h3><p>Lo concede Giorgio, il Presidente. Una volta al giorno per persona.</p>
+        <ul class="jrules">
+          <li><span class="pill b">+1</span>Hai preso un malus oggi? L'ultimo diventa +1.</li>
+          <li><span class="pill b">+2</span>Oggi niente malus? Vale +2.</li>
+          <li><span class="pill m">−1</span>Il Malus Ele già scattato resta.</li>
+        </ul></div>
     </div>
     <div class="cols">
-      <div><h3 class="b">Bonus</h3><ul class="plist" id="pl-b"></ul></div>
-      <div><h3 class="m">Malus</h3><ul class="plist" id="pl-m"></ul></div>
+      <div><h3 class="b">Bonus</h3><ul class="bmlist" id="pl-b"></ul></div>
+      <div><h3 class="m">Malus</h3><ul class="bmlist" id="pl-m"></ul></div>
     </div>
   </section>
 </main>
