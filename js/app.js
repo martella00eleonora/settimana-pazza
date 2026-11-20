@@ -860,7 +860,9 @@
       ["Il più graziato dal Jolly", "🃏", best(e => e.jolly), ["Jolly ricevuto", "Jolly ricevuti"]],
       ["Campione delle mini-sfide", "⚡", best(e => isMiniPt(e) && Number(e.delta) > 0), ["mini-sfida vinta", "mini-sfide vinte"]],
       ["Bestemmiatore ufficiale", "🤬", best(e => baseReason(e).startsWith("Malus Jacopo")), ["volta", "volte"]],
-      ["Tenacia di ferro", "🔥", best(e => e.auto), ["Malus Ele", "Malus Ele"]]
+      ["Tenacia di ferro", "🔥", best(e => e.auto), ["Malus Ele", "Malus Ele"]],
+      ["Ritardatario cronico", "⏰", best(e => baseReason(e).startsWith("Malus Fede")), ["ritardo", "ritardi"]],
+      ["Re del social", "📱", best(e => baseReason(e).startsWith("Malus Antonio")), ["volta col telefono in mano", "volte col telefono in mano"]]
     ].filter(t => t[2]).map(([name, ic, b, w]) => ({name, ic, n:b.n, ids:b.ids, what: b.n === 1 ? w[0] : w[1]}));
     return {stats, days, titles, msg:presMsg()};
   }

@@ -118,7 +118,7 @@ Il 28 a mezzanotte l'admin trova **Scopri il vincitore**. Ogni suo tocco porta a
 2. **Chiusura ufficiale**: il proclama del Presidente (foto con corona, testo nel carattere dei titoli, firma, sigillo di ceralacca) e il resto del Direttivo.
 3. **La settimana in numeri**: sei palline appese a un filo con fiocchi e lucine, con dentro numeri che salgono da zero (bonus, malus, Malus Ele, Jolly, mini-sfide, certificati).
 4. **Le sette giornate**: sette pacchi regalo incartati che si scartano uno alla volta; dentro c'è la data, gli eventi della giornata e quanti bonus e malus ci sono stati.
-5. **Titoli speciali**, uno alla volta, calcolati sui conteggi e non sui punti: Re dei malus, Collezionista di bonus, Il più graziato dal Jolly, Campione delle mini-sfide, Bestemmiatore ufficiale, Tenacia di ferro. Compaiono solo quelli che qualcuno si è guadagnato; a pari merito vanno a tutti.
+5. **Titoli speciali**, uno alla volta, calcolati sui conteggi e non sui punti: Re dei malus, Collezionista di bonus, Il più graziato dal Jolly, Campione delle mini-sfide, Bestemmiatore ufficiale, Tenacia di ferro, Ritardatario cronico (Malus Fede), Re del social (Malus Antonio). Compaiono solo quelli che qualcuno si è guadagnato; a pari merito vanno a tutti.
 6. **I certificati**: una pagina di stacco rosso vino, poi un certificato alla volta con chi l'ha ricevuto.
 7. **La classifica finale**: pagina d'attesa con la coppa, poi dall'ultimo posto al 4°, uno alla volta.
 8. **Il podio**: tre gradini coperti dal "?". Si svelano 3° e 2° con un rullo di tamburi breve, poi il vincitore con il rullo lungo (3 secondi), il lampo, la corona, il nome dorato, coriandoli e fuochi d'artificio.
