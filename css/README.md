@@ -1,0 +1,30 @@
+# css/ — la grafica
+
+Un solo file, `style.css`, con tutti i colori, i caratteri, l'impaginazione e le animazioni.
+
+## Lo stile
+
+- **Notte d'inverno**: blu scuro (`--night`, `--card`), oro (`--gold`), rosso (`--red`), verde abete (`--pine`), bianco neve (`--snow`).
+- **Caratteri** (da Google Fonts): *Cinzel Decorative* e *Cinzel* per titoli e date, *Figtree* per il testo, *Pinyon Script*, un corsivo, per le firme ("Winter Edition", "Giorgio", "Summer Edition"), *DM Mono* per le etichette piccole.
+- **Card scure con bordi dorati**, angoli arrotondati, ombre morbide.
+- **Verde** per i bonus (`--bonus`), **rosso** per i malus (`--malus`).
+
+Tutte le variabili di colore sono in cima al file, dentro `:root`.
+
+## Come è organizzato
+
+1. Variabili e regole di base.
+2. Testata: neve, lucine, ghirlanda, palline delle giornate, conto alla rovescia.
+3. Le quattro schede: classifica e podio, programma, storico, regole.
+4. Barra in basso, pannelli che si aprono dal basso, Area admin.
+5. La cerimonia, pagina per pagina: conto alla rovescia, proclama, numeri, pacchi regalo, titoli, certificati, classifica, podio, vincitore, ringraziamenti.
+
+Ogni blocco ha un commento che dice cosa riguarda (`/* --- storico --- */`, `/* --- cerimonia: … --- */`).
+
+## Da sapere per studiarlo
+
+- **Le regole più recenti sono in fondo** e vincono su quelle prima con lo stesso selettore: il file è cresciuto una richiesta alla volta. Per capire come appare davvero un elemento, cerca il suo nome nel file e guarda **l'ultima** regola che lo riguarda.
+- **Le animazioni rispettano chi le vuole ridotte**: stanno dentro `@media (prefers-reduced-motion: no-preference)`, quindi chi nel telefono ha "riduci movimento" non le vede.
+- **Le pause delle animazioni sono "a cascata"**: molti elementi hanno una variabile `--d` o `--i` (data dall'HTML) che sposta il loro inizio, così entrano uno dopo l'altro.
+- **I disegni sono fatti in CSS o SVG**, senza immagini: ghirlanda, palline, pacchi con nastro e fiocco, sigilli, raggi del vincitore.
+- **Il telefono prima di tutto**: tutto è pensato per uno schermo largo 320–430 px, e regge anche tablet e computer.

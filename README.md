@@ -2,6 +2,11 @@
 
 Segnapunti della settimana pazza (21–27 dicembre 2026): classifica, programma per giornata, bonus e malus, Jolly presidenziale, mini-sfide, certificati e cerimonia di chiusura con i fuochi d'artificio.
 
+Online su <https://martella00eleonora.github.io/settimana-pazza/>.
+
+- **[LAVORO_FATTO.md](LAVORO_FATTO.md)**: il racconto completo di cosa è stato fatto, come e perché, e da dove partire per studiare il codice.
+- Ogni cartella ha il suo README: [js/](js/README.md), [css/](css/README.md), [supabase/](supabase/README.md), [foto/](foto/README.md).
+
 ## Cosa c'è nella cartella
 
 ```
@@ -14,8 +19,8 @@ settimana-pazza/
 ├── js/app.js           la logica: giornate, punti, Malus Ele, Jolly, copertura, cerimonia
 ├── supabase/schema.sql tabelle e regole di sicurezza del database online
 ├── foto/profili/       le foto dei profili già ritagliate (224×224) usate dall'app
-├── foto/originali/     le foto originali ricevute
-└── appunti/            le foto dei fogli con idee, programma e bonus/malus
+├── foto/originali/     le foto originali ricevute (solo sul computer, non su GitHub)
+└── appunti/            le foto dei fogli con idee e programma (solo sul computer, non su GitHub)
 ```
 
 Per cambiare un giocatore, un'attività o un bonus/malus si tocca `js/dati.js`. I dati di partenza valgono solo alla prima apertura: dopo, l'app usa quelli salvati nel browser.
@@ -44,8 +49,11 @@ I punti si salvano **nel browser** in cui apri il file, non nel file. Quindi:
 
 ## Admin
 
-- **Entra come admin** in alto. La prima volta scegli un PIN di almeno 4 cifre.
-- **Prova una giornata…**: simula una giornata della settimana. I punti di prova si cancellano con *Esci dalla prova*. **Prova la chiusura del 28** fa vedere la cerimonia senza scoprire davvero la classifica.
+- **Area admin**: il pulsante con la chiave, in alto a destra. Online si entra con email e password; in locale, la prima volta, si sceglie un PIN di almeno 4 cifre.
+- **Prova una giornata**: bottoni dal 21 al 27. I punti di prova li vede solo l'admin e si cancellano con *Esci dalla prova*.
+- **Riempi con una settimana finta**: prepara da sola una settimana di prova già giocata e porta la prova al 27.
+- **Cerimonia**: prova la cerimonia solo sul telefono dell'admin. **Cerimonia in diretta**: la stessa prova, vista anche dagli altri telefoni.
+- Queste tre prove vanno tolte prima del 21 dicembre.
 
 ## Regole che l'app applica da sola
 
@@ -55,7 +63,7 @@ I punti si salvano **nel browser** in cui apri il file, non nel file. Quindi:
 - **Jolly presidenziale** (Giorgio, il Presidente): una volta al giorno per persona. Trasforma l'ultimo malus della giornata in +1; a chi quel giorno non ha malus dà +2.
 - **Mini-sfide**: create al volo durante la giornata, +1 o −1, una volta al giorno per persona.
 - **26 e 27**: la classifica è coperta (??) per chi non è admin.
-- **27 sera**: fino alle 23 si assegnano i punti, dalle 23 a mezzanotte solo i **certificati** (+1).
+- **27 sera**: i punti si chiudono alle 23 oppure al primo **certificato** consegnato; poi solo certificati (+1) e messaggio del Presidente.
 - **28 a mezzanotte**: si chiude tutto e l'admin trova **Scopri il vincitore**. Dopo la cerimonia la classifica è scoperta per tutti e non si può più modificare niente.
 
 ## Il Direttivo
