@@ -56,3 +56,10 @@ const PHOTOS = {
   "g11": "foto/profili/jacopo.jpg",
   "g9": "foto/profili/giorgio.jpg"
 };
+/* foto "come tutti gli altri" (sfondo colorato) per chi nel Direttivo ha la foto ufficiale:
+   si usano nella scheda dei bonus e malus e nella fila di volti dei ringraziamenti */
+const PHOTOS_FUN = {
+  "g2": "foto/profili/ele-blu.jpg",
+  "g3": "foto/profili/coronaus-blu.jpg",
+  "g10": "foto/profili/laura-blu.jpg"
+};

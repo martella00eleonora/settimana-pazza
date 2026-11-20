@@ -240,6 +240,8 @@
   const avatar = (p, cls = "") => PHOTOS[p?.id]
     ? `<span class="av photo ${cls}" style="--pc:${colorOf(p)}"><img src="${PHOTOS[p.id]}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="av ${cls}" style="--pc:${colorOf(p)}">${esc(initial(p))}</span>`;
+  const funAvatar = (p, cls = "") => (typeof PHOTOS_FUN === "object" && PHOTOS_FUN[p?.id])
+    ? `<span class="av photo ${cls}" style="--pc:${colorOf(p)}"><img src="${PHOTOS_FUN[p.id]}" alt="" loading="lazy" decoding="async"></span>` : avatar(p, cls);
   const roleTag = p => p.role ? `<span class="role">${esc(p.role)}</span>` : "";
   function mineTag(p){
     if (p.role === "Presidente") return `<span class="mine j">Jolly presidenziale</span>`;
@@ -469,7 +471,7 @@
     const cap = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
     const row = p => { const o = player(p.owner), name = p.label.split(" · ")[0];
       return `<li class="bm ${p.delta >= 0 ? "b" : "m"}">
-        ${o ? avatar(o, "bm-av") : `<span class="av bm-av" style="--pc:var(--card-2)">${p.delta >= 0 ? "+" : "−"}</span>`}
+        ${o ? funAvatar(o, "bm-av") : `<span class="av bm-av" style="--pc:var(--card-2)">${p.delta >= 0 ? "+" : "−"}</span>`}
         <span class="bm-t"><span class="bm-k">${esc(name)}</span><b>${esc(cap(p.short || p.label))}</b>${kind(p)}</span>
         <span class="bm-v">${sign(p.delta)}</span></li>`; };
     const sorted = [...S.presets].sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
@@ -971,7 +973,7 @@
       const nPts = (X.stats || []).slice(0, 3).reduce((a, x) => a + (Number(x[1]) || 0), 0), nCert = (X.stats || [])[5]?.[1] || 0;
       body = `<div class="ty-stage"><div class="eyebrow">Settimana Pazza · Winter Edition 2026</div>
           <h2 class="ty-h">Grazie a tutti!</h2><div class="script">per aver partecipato</div>
-          <div class="ty-faces" aria-hidden="true">${cer.list.map((x, i) => `<span style="--i:${i}">${avatar(x.p)}</span>`).join("")}</div>
+          <div class="ty-faces" aria-hidden="true">${cer.list.map((x, i) => `<span style="--i:${i}">${funAvatar(x.p)}</span>`).join("")}</div>
           <p class="ty-t">Sette giornate, ${nPts} tra bonus e malus${nCert ? `, ${nCert} ${nCert === 1 ? "certificato" : "certificati"}` : ""} e un numero imprecisato di risate.<br>È stata una settimana pazza davvero.</p>
           <div class="ty-card"><div class="ty-k">Il Direttivo vi dà appuntamento alla</div>
             <div class="ty-sun" aria-hidden="true">\u2600\uFE0F</div>
