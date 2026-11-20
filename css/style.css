@@ -1186,3 +1186,8 @@ section.view > *{min-width:0}
 }
 @keyframes tyWave{0%{transform:translateY(20px);opacity:0}40%{transform:translateY(-10px);opacity:1}70%{transform:translateY(3px)}100%{transform:none;opacity:1}}
 @keyframes tySun{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+/* pacchi delle giornate: scarto un po' più lento */
+@media (prefers-reduced-motion:no-preference){
+  .gb-lid{animation:lidOff 1.4s var(--d) cubic-bezier(.5,0,.3,1) forwards}
+  .gb-in > *{animation:fadeUp .6s calc(var(--d) + .7s) both}
+}

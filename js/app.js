@@ -784,7 +784,7 @@
     const P = (n, ...a) => sfx.play(n, ...a);
     if (page === "intro"){ P("whoosh"); P("chime", .4); P("stamp", 2.2); }
     else if (page === "numbers"){ for (let i = 0; i < info.stats; i++) P("pop", i * .35 + .55); P("chime", info.stats * .35 + 1.4); }
-    else if (page === "days"){ for (let i = 0; i < info.days; i++){ P("pop", .5 + i * .5 + .2); P("sparkle", .5 + i * .5 + .55); } }
+    else if (page === "days"){ for (let i = 0; i < info.days; i++){ P("pop", .6 + i * .7 + .45); P("sparkle", .6 + i * .7 + .85); } }
     else if (page.startsWith("title")){ P("whoosh"); P("chime", .25); P("sparkle", .9); }
     else if (page === "cert-intro"){ P("boom"); P("chime", .5); }
     else if (page.startsWith("cert")){ P("whoosh"); P("stamp", .3); P("sparkle", .6); }
@@ -936,7 +936,7 @@
       ${goBtn("Le sette giornate", "Si ripercorrono le giornate…")}`;
     else if (page === "days") body = `<div class="cer-hero sm"><div class="eyebrow">Sette regali da scartare</div><h2>Le sette giornate</h2></div>
       <div class="gifts">${(X.days || []).map((g, i) => { const acts = g.acts.map(id => S.activities.find(a => a.id === id)).filter(Boolean);
-        return `<div class="gbox w${i % 4} ${i === 0 ? "wide" : ""}" style="--d:${.5 + i * .5}s"><span class="gb-bow" aria-hidden="true"></span>
+        return `<div class="gbox w${i % 4} ${i === 0 ? "wide" : ""}" style="--d:${.6 + i * .7}s"><span class="gb-bow" aria-hidden="true"></span>
           <div class="gb-in"><div class="gb-top"><span class="gb-date"><b>${dt(g.d).getDate()}</b>${esc(wdShort(g.d))}</span>${DAYNAME[g.d] ? `<span class="gb-name">${esc(DAYNAME[g.d])}</span>` : ""}</div>
             <ul class="gb-acts">${acts.length ? acts.map(a => `<li>${esc(a.title)}</li>`).join("") : `<li class="free">Giornata libera</li>`}</ul>
             <div class="gb-n">${g.n ? `<b>${g.n}</b> ${g.n === 1 ? "bonus o malus" : "bonus e malus"}` : "nessun punto"}</div></div>
