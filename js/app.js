@@ -664,8 +664,9 @@
   async function setTrial(day){
     if (!day){
       const trialPts = S.points.filter(e => e.trial);
-      for (const e of trialPts) await write(() => db.doc("points/" + e.id).delete());
-      for (const x of S.extras.filter(x => x.trial)) await write(() => db.doc("extras/" + x.id).delete());
+      if (trialPts.length > 20) toast("Cancello i dati della prova…");
+      const paths = [...trialPts.map(e => "points/" + e.id), ...S.extras.filter(x => x.trial).map(x => "extras/" + x.id)];
+      for (let i = 0; i < paths.length; i += 12) await Promise.all(paths.slice(i, i + 12).map(p => write(() => db.doc(p).delete())));
       if (S.settings.some(x => x.id === "messaggio-prova")) await write(() => db.doc("settings/messaggio-prova").delete());
       S.trial = null; lsSet("sp-prova", null); lsSet("sp-prova-chiusa", null);
       toast(trialPts.length ? `Prova finita: cancellati ${trialPts.length} punti di prova.` : "Prova finita.");
@@ -1232,6 +1233,7 @@
   $("adm-close").addEventListener("click", closeAdm);
   $("trial-chips").addEventListener("click", e => {
     const b = e.target.closest("[data-trial]"); if (!b) return;
+    if (filling){ toast("Aspetta: sto ancora preparando la settimana finta.", null, true); return; }
     const v = b.dataset.trial; closeAdm();
     if (v === "closing"){ openCeremony(true); return; }
     if (v === "closing-live"){ armLive(b); return; }
@@ -1239,6 +1241,50 @@
     if (v !== S.trial) setTrial(v);
   });
   $("adm-panel").addEventListener("click", e => { if (e.target.id === "adm-panel") closeAdm(); });
+  /* settimana finta: riempie la prova con dati di esempio di tutte le giornate, per provare la cerimonia */
+  $("trial-fill").addEventListener("click", e => armOrRun(e.currentTarget, fillTrial));
+  let filling = false;
+  async function fillTrial(){
+    closeAdm();
+    if (filling) return;
+    filling = true;
+    try { await fillTrialNow(); } finally { filling = false; }
+  }
+  async function fillTrialNow(){
+    if (S.trial) await setTrial(null);
+    toast("Preparo la settimana finta, ci vuole qualche secondo…");
+    const rnd = n => Math.floor(Math.random() * n), pick = a => a[rnd(a.length)];
+    const shuffle = a => a.map(x => [Math.random(), x]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+    const ids = S.players.map(p => p.id), at = (day, min) => new Date(day + "T21:00").getTime() + min * 60000;
+    const pts = [];
+    const add = (pid, delta, reason, day, min, extra = {}) => pts.push({playerId:pid, delta, reason, activityId:"", day, at:at(day, min), trial:true, ...extra});
+    const presets = S.presets.filter(p => !p.auto);
+    for (const day of DAYS.slice(0, 6)){
+      for (const a of actsOf(day)) for (const r of a.rules || []) shuffle(ids).slice(0, 1 + rnd(3)).forEach(pid => add(pid, r.delta, r.label, day, 20 + rnd(150), {activityId:a.id}));
+      const taken = new Set();
+      const bon = presets.filter(p => p.delta > 0), mal = presets.filter(p => p.delta < 0);
+      for (let k = 0, n = 6 + rnd(4); k < n; k++){ const p = pick(Math.random() < .55 && bon.length ? bon : mal), pid = pick(ids), key = pid + p.label;
+        if (p.once && taken.has(key)) continue; taken.add(key); add(pid, p.delta, p.label, day, rnd(200)); }
+    }
+    /* due Jolly del Presidente su due malus a caso */
+    shuffle(pts.filter(x => x.delta < 0)).slice(0, 2).forEach(x => { x.reason = JOLLY + x.reason; x.delta = 1; x.jolly = true; });
+    /* due mini-sfide, con chi le ha vinte */
+    const minis = [["2026-12-23", "Braccio di ferro", 1], ["2026-12-25", "Chi ride per primo perde", -1]];
+    for (const [day, label, delta] of minis) shuffle(ids).slice(0, 1 + rnd(2)).forEach(pid => add(pid, delta, label, day, 100 + rnd(60)));
+    /* il 27: qualche punto prima delle 23, poi i certificati */
+    for (let k = 0; k < 4; k++){ const p = pick(presets); add(pick(ids), p.delta, p.label, CERT_DAY, rnd(110)); }
+    const certs = [["Miglior ballerino", 1], ["Re del karaoke", 1], ["Premio simpatia", 2]];
+    for (const [name, n] of certs) shuffle(ids).slice(0, n).forEach(pid => add(pid, 1, "Certificato · " + name, CERT_DAY, 125 + rnd(20), {activityId:"premi"}));
+    /* si scrive a gruppi di 12, così online ci vogliono pochi secondi */
+    const jobs = [...minis.map(([day, label, delta]) => () => db.collection("extras").doc().set({day, label, delta, once:true, createdAt:at(day, 90), trial:true})),
+      ...certs.map(([name]) => () => db.collection("extras").doc().set({type:"cert", day:CERT_DAY, label:"Certificato · " + name, delta:1, once:true, createdAt:at(CERT_DAY, 120), trial:true})),
+      ...pts.map(p => () => db.collection("points").doc().set(p))];
+    let ok = true;
+    for (let i = 0; i < jobs.length && ok; i += 12) ok = !(await Promise.all(jobs.slice(i, i + 12).map(f => write(f)))).includes(false);
+    if (ok) ok = await write(() => db.doc("settings/messaggio-prova").set({trial:true, at:NOW(), text:"Il Direttivo dichiara chiusa la Settimana Pazza Winter Edition 2026.\nSette giornate di sfide, malus e pigiami: grazie a tutti, siete stati pazzi al punto giusto!"}));
+    await setTrial(CERT_DAY);
+    toast(ok ? `Settimana finta pronta: ${pts.length} punti, 2 mini-sfide, 3 certificati e il messaggio del Presidente. Ora apri «Cerimonia» o «Cerimonia in diretta».` : "Non sono riuscito a preparare tutta la settimana finta.", null, !ok);
+  }
   /* la prova in diretta va sui telefoni di tutti: chiede conferma con un secondo tocco */
   function armLive(btn){
     if (btn.dataset.ok){ delete btn.dataset.ok; openCeremony(true, null, true); return; }
