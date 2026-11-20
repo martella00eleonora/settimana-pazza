@@ -5,3 +5,7 @@ foto/originali/
 appunti/
 # trascrizioni del monitor
 chats/
+# prove automatiche: copie del sito, foto e moduli scaricati
+tests/.tmp/
+tests/node_modules/
+tests/package-lock.json

@@ -1,0 +1,12 @@
+{
+  "name": "settimana-pazza-prove",
+  "private": true,
+  "type": "module",
+  "description": "Prove automatiche del segnapunti Settimana Pazza, con Playwright",
+  "scripts": {
+    "prove": "node esegui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
+  }
+}

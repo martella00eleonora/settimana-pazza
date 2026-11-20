@@ -46,7 +46,7 @@ Gli appunti di partenza erano le foto di alcuni fogli scritti a mano con il prog
 | `js/config.js` | l'indirizzo e la chiave pubblica del database |
 | `supabase/schema.sql` | la tabella del database e le regole su chi legge e chi scrive |
 
-Ogni cartella ha un suo `README.md` che spiega i file nel dettaglio.
+Ogni cartella ha un suo `README.md` che spiega i file nel dettaglio. Le prove automatiche sono in `tests/`.
 
 **Dove sta il sito.** GitHub Pages pubblica il ramo `main` di questo repository: ogni modifica caricata su GitHub arriva online in circa un minuto.
 
@@ -148,7 +148,7 @@ Ogni modifica è stata provata con **Playwright** (un browser comandato da scrip
 - la cerimonia completa, con le foto di ogni pagina, guardate prima di dire che andava bene;
 - iPhone SE, iPhone 13, Pixel 7, iPad e computer: nessuna pagina più larga dello schermo.
 
-Gli script delle prove non sono in questo repository: sono strumenti di lavoro, conservati a parte.
+Le prove sono nella cartella [`tests/`](tests/README.md), con un README che spiega come sono scritte e come lanciarle.
 
 ## 10. Problemi incontrati e come sono stati risolti
 
@@ -173,6 +173,7 @@ Tutto è stato costruito tra il **19 e il 20 novembre 2026**, una richiesta alla
 | 19/11 notte | Punti chiusi al primo certificato; proclama del Presidente; calendario dell'Avvento; titoli e certificati uno alla volta |
 | 20/11 notte | Pacchi regalo, pagina d'attesa della classifica, podio coperto dal 3° al 1° con rullo di tamburi |
 | 20/11 notte | Cerimonia in diretta di prova, suoni, schermo acceso, pagina dei ringraziamenti, settimana finta, foto con lo sfondo colorato |
+| 20/11 | Documentazione, pulizia del CSS (166 regole in meno, aspetto identico), prove automatiche pubblicate in `tests/` |
 
 La lista completa delle modifiche è nella storia dei commit del repository.
 
@@ -189,6 +190,7 @@ Un ordine che funziona:
 2. **`js/dati.js`**: i dati, così poi si riconoscono `g0…g11`, `presets`, `activities`.
 3. **`js/app.js`**, una sezione alla volta (sono separate da commenti `/* ---------- nome ---------- */`): orologio e calendario → archivio locale → stato → regole della serata → classifica → programma → storico → regole → pannelli → certificati → cerimonia → eventi → avvio.
 4. **`js/db-online.js`** e **`supabase/schema.sql`**, insieme: come parla con il database e cosa il database permette.
-5. **`css/style.css`**: le regole sono state aggiunte nel tempo, in fondo al file. Le più recenti vincono su quelle prima con lo stesso selettore, quindi per capire l'aspetto finale di un elemento conviene cercare il suo nome e guardare l'**ultima** regola.
+5. **`css/style.css`**: è cresciuto una richiesta alla volta, poi è stato ripulito (vedi il README della cartella). Qualche selettore compare ancora più di una volta: per capire l'aspetto finale di un elemento conviene cercare il suo nome e guardare l'**ultima** regola.
+6. **`tests/`**: le prove automatiche, utili anche per vedere il sito "usato" da uno script.
 
 Per provarlo sul proprio computer: scaricare il repository, svuotare `js/config.js` (così non tocca il database vero) e aprire `index.html` con il browser. Per l'Area admin si sceglie un PIN qualsiasi di almeno 4 cifre.

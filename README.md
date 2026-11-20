@@ -5,7 +5,7 @@ Segnapunti della settimana pazza (21–27 dicembre 2026): classifica, programma 
 Online su <https://martella00eleonora.github.io/settimana-pazza/>.
 
 - **[LAVORO_FATTO.md](LAVORO_FATTO.md)**: il racconto completo di cosa è stato fatto, come e perché, e da dove partire per studiare il codice.
-- Ogni cartella ha il suo README: [js/](js/README.md), [css/](css/README.md), [supabase/](supabase/README.md), [foto/](foto/README.md).
+- Ogni cartella ha il suo README: [js/](js/README.md), [css/](css/README.md), [supabase/](supabase/README.md), [foto/](foto/README.md), [tests/](tests/README.md).
 
 ## Cosa c'è nella cartella
 
@@ -18,6 +18,7 @@ settimana-pazza/
 ├── js/db-online.js     archivio online su Supabase, con aggiornamenti in diretta
 ├── js/app.js           la logica: giornate, punti, Malus Ele, Jolly, copertura, cerimonia
 ├── supabase/schema.sql tabelle e regole di sicurezza del database online
+├── tests/              le prove automatiche con Playwright (vedi tests/README.md)
 ├── foto/profili/       le foto dei profili già ritagliate (224×224) usate dall'app
 ├── foto/originali/     le foto originali ricevute (solo sul computer, non su GitHub)
 └── appunti/            le foto dei fogli con idee e programma (solo sul computer, non su GitHub)

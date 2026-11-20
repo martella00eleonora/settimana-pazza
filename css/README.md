@@ -23,7 +23,9 @@ Ogni blocco ha un commento che dice cosa riguarda (`/* --- storico --- */`, `/* 
 
 ## Da sapere per studiarlo
 
-- **Le regole più recenti sono in fondo** e vincono su quelle prima con lo stesso selettore: il file è cresciuto una richiesta alla volta. Per capire come appare davvero un elemento, cerca il suo nome nel file e guarda **l'ultima** regola che lo riguarda.
+- **Il file è cresciuto una richiesta alla volta e poi è stato ripulito** (20 novembre 2026): da 1.193 a circa 1.010 righe. Sono state unite le regole con lo stesso selettore, tolte le proprietà già sovrascritte, tolte le regole di elementi che non esistono più (vecchie porticine dell'Avvento, vecchio storico, striscia rossa…) e le animazioni mai usate.
+- **Come si è controllato che non cambiasse niente**: prima e dopo la pulizia uno script ha aperto il sito in 48 schermate diverse (schede, pannelli, ogni pagina della cerimonia, telefono e computer) e ha salvato lo stile calcolato di ognuno dei circa 40.000 elementi. Confronto: zero differenze, con e senza animazioni.
+- **Restano alcuni selettori ripetuti**, apposta: sono i casi in cui unirli cambierebbe l'aspetto, perché in mezzo c'è un'altra regola che li corregge. Per capire come appare davvero un elemento, cerca il suo nome nel file e guarda **l'ultima** regola che lo riguarda.
 - **Le animazioni rispettano chi le vuole ridotte**: stanno dentro `@media (prefers-reduced-motion: no-preference)`, quindi chi nel telefono ha "riduci movimento" non le vede.
 - **Le pause delle animazioni sono "a cascata"**: molti elementi hanno una variabile `--d` o `--i` (data dall'HTML) che sposta il loro inizio, così entrano uno dopo l'altro.
 - **I disegni sono fatti in CSS o SVG**, senza immagini: ghirlanda, palline, pacchi con nastro e fiocco, sigilli, raggi del vincitore.
