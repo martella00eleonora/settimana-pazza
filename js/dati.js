@@ -21,7 +21,7 @@ const SEED = {
       "Mimo.",
       "Indovina la parola, con musica e cuffie."
     ], [["Non sei in pigiama", -1], ["Pigiama e pantofole", 1]]),
-    tradizioni: A("2026-12-22", 1, "Le tradizioni vanno rispettate", "", ["Ci vediamo al Capp e al Movida."], []),
+    tradizioni: A("2026-12-22", 1, "Le tradizioni vanno rispettate", "", ["Ci vediamo al Bar Cappuccini e al Movida."], []),
     ppt: A("2026-12-23", 2, "PowerPoint in costume", "Costume, a libera interpretazione", [
       "Tema libero: 5 minuti di presentazione e 5 di dibattito.",
       "Votazione anonima: in palio 1+1 malus o 2 bonus."

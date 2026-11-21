@@ -178,7 +178,7 @@ Tutto è stato costruito tra il **19 e il 20 novembre 2026**, una richiesta alla
 | 20/11 notte | Cerimonia in diretta di prova, suoni, schermo acceso, pagina dei ringraziamenti, settimana finta, foto con lo sfondo colorato |
 | 20/11 | Documentazione, pulizia del CSS (166 regole in meno, aspetto identico), prove automatiche pubblicate in `tests/` |
 | 21/11 | Bonus e malus rivisti (Bonus Andrea, Bonus Mariangela, Bonus Laura «Entusiasmo», Malus Cristiana), Malus Ele sullo stesso malus ripetuto (la ripetizione vale come Malus Ele), Jolly presidenziale automatico, nomi e testi ufficiali dei bonus e malus, foto azzurre per Andrea e Mariangela |
-| 21/11 sera | Programma aggiornato (pigiama e quiz party il 21, tradizioni al Capp e al Movida il 22, PowerPoint in costume il 23, shooting il 26, compleanno di Cri il 27), programma a tappe (titoli dal 1° dicembre, dettagli dal 21) e punti dal 21 alle 19 |
+| 21/11 sera | Programma aggiornato (pigiama e quiz party il 21, tradizioni al Bar Cappuccini e al Movida il 22, PowerPoint in costume il 23, shooting il 26, compleanno di Cri il 27), programma a tappe (titoli dal 1° dicembre, dettagli dal 21) e punti dal 21 alle 19 |
 
 La lista completa delle modifiche è nella storia dei commit del repository.
 
