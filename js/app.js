@@ -1333,7 +1333,8 @@
 
   /* il cambio di serata alle 6 del mattino aggiorna la pagina da solo */
   /* cambi di fase: nuova giornata alle 6, solo certificati alle 23 del 27, chiusura a mezzanotte */
-  const phase = () => [currentDay(), certHour(), NOW() >= END.getTime()].join("|");
+  /* conta anche le tappe del programma (1° dicembre, 21 a mezzanotte) e l'apertura dei punti alle 19 del 21 */
+  const phase = () => [currentDay(), certHour(), NOW() >= END.getTime(), NOW() >= PROGRAM_FROM.getTime(), NOW() >= START.getTime(), pointsYet()].join("|");
   let lastPhase = phase(), lastDay = currentDay();
   /* se a mezzanotte era rimasta attiva la prova, la chiude e cancella i punti di prova */
   const endTrialIfClosed = () => { if (db && S.trial && (NOW() >= END.getTime() || revealed())) setTrial(null); };

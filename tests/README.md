@@ -46,6 +46,7 @@ Per ogni prova esce `OK` o `FALLITA`. Quello che ogni prova ha scritto, e le fot
 | 19 bonus e malus nuovi e Malus Ele | entrando da admin i bonus e malus del database diventano quelli di `js/dati.js`; lo stesso malus ripetuto vale come Malus Ele; dopo 2 volte (Federica dopo 1) il malus non si assegna più |
 | 20 Jolly presidenziale online | con il database finto: l'avviso del Jolly compare e conta anche un bonus salvato con il testo vecchio |
 | 21 programma a tappe | programma coperto a novembre, solo titoli dal 1° dicembre, dettagli dal 21 a mezzanotte; i punti si segnano dal 21 alle 19 |
+| 22 calendario a pagina aperta | due telefoni (admin e amico) con la pagina mai ricaricata dal 30/11 al 28/12: programma coperto → titoli → dettagli, punti dalle 19 del 21, cambio di giornata alle 6, classifica coperta dal 26, solo certificati dalle 23 del 27, «Scopri il vincitore» a mezzanotte |
 
 ## Come sono scritte
 
