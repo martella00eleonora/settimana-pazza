@@ -1012,3 +1012,6 @@ section.view > *{min-width:0}
   .gb-lid{animation:lidOff 1.4s var(--d) cubic-bezier(.5,0,.3,1) forwards}
   .gb-in > *{animation:fadeUp .6s calc(var(--d) + .7s) both}
 }
+/* bonus e malus: titolo e, sotto, la descrizione più piccola */
+.bm-d{font-size:13px;line-height:1.35;color:var(--muted)}
+.bm-t .ktag{justify-self:start;margin-top:3px}

@@ -28,7 +28,7 @@ I dati di partenza. Valgono solo la prima volta: dopo, l'app usa quelli salvati.
 - `ROLES`: chi è nel Direttivo (`g9` Presidente, `g10` Vicepresidente, `g2` e `g3` Assessori).
 - `PCOLORS`: il colore di ogni giocatore.
 - `SEED.activities`: il programma, con la funzione `A(giorno, ordine, titolo, dress code, note, regole)`.
-- `SEED.presets`: i bonus e malus della settimana (`once` = 1 volta al giorno, `auto` = automatico come il Malus Ele).
+- `SEED.presets`: i bonus e malus della settimana, ognuno con nome, titolo e descrizione (`once` = 1 volta al giorno, `auto` = automatico come il Malus Ele). L'app li riconosce dal nome (la parte prima di « · »), quindi i testi si possono cambiare senza perdere i punti già dati.
 - `PHOTOS`: la foto di ogni giocatore. `PHOTOS_FUN`: le foto con lo sfondo colorato di Laura, Coronaus ed Ele, usate nella lista dei bonus e malus e nei ringraziamenti.
 
 ## db-online.js
@@ -59,13 +59,13 @@ Tutto il resto, dentro una funzione che parte subito (`(function(){ ... })()`). 
 | calendario | `DAYS` (21–27), inizio e fine settimana |
 | archivio locale | lo stesso `db` di `db-online.js`, ma salvato in `localStorage` |
 | stato | l'oggetto `S`: giocatori, punti, attività, scheda aperta, admin sì/no, prova in corso |
-| serata in corso | `currentDay()` (la giornata cambia alle 6), `live()`, `assignOpen()` (si possono dare punti?), `frozen()` (è tutto chiuso?), `hiddenDay()` (giornata coperta?), `allPoints()` (aggiunge i Malus Ele e i Premi presidenziali calcolati) |
+| serata in corso | `currentDay()` (la giornata cambia alle 6), `live()`, `assignOpen()` (si possono dare punti?), `frozen()` (è tutto chiuso?), `hiddenDay()` (giornata coperta?), `allPoints()` (aggiunge i Malus Ele e i Jolly calcolati) |
 | conto alla rovescia e chiusura | la testata, le palline delle giornate, il conto verso il 21 |
 | modalità | cosa vede l'admin e cosa gli altri; l'Area admin |
 | classifica | `ranked()`, podio, card, classifica per giornata, "Ieri in breve" |
 | programma | le card delle attività e delle mini-sfide |
 | storico | filtri e voci raggruppate per giornata |
-| regole | Direttivo, Premio presidenziale, bonus e malus |
+| regole | Direttivo, Jolly presidenziale, bonus e malus |
 | pannelli | i fogli che si aprono dal basso: dare punti (`openMulti`), mini-sfide, prova di una giornata (`setTrial`) |
 | certificati | consegna dei certificati e messaggio del Presidente |
 | suoni | `sfx`: suoni generati con Web Audio (oscillatori e rumore filtrato); `keepAwake()` per lo schermo acceso |

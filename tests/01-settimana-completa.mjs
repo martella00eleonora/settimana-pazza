@@ -7,7 +7,7 @@ await pg.clock.install({time: new Date(2026,11,24,21,0)});
 await pg.goto('file://'+process.cwd()+'/local-test/index.html'); await pg.evaluate(()=>localStorage.clear()); await pg.reload(); await pg.waitForTimeout(300);
 await pg.tap('#adm-fab'); await pg.fill('#in-pin','1234'); await pg.tap('#pin-go');
 R.roles = await pg.$$eval('.row .role', e=>e.map(x=>x.closest('.n').textContent));
-// 24: punti, Malus Ele (secondo malus della giornata) e Premio presidenziale (Antonio prende tutti i bonus)
+// 24: punti, Malus Ele (stesso malus ripetuto) e Jolly presidenziale (Antonio prende tutti i bonus)
 await pg.tap('#multi-btn'); await pg.tap('[data-pick="p:p6"]'); for (const g of ['g0','g6']) await pg.tap(`[data-sel="${g}"]`); await pg.tap('#mu-go');
 await pg.tap('[data-sel="g0"]'); await pg.tap('#mu-go');   // Bardy secondo inglesismo: scatta il Malus Ele
 for (const k of ['p0','p1','p2','p9','p10']){ await pg.tap(`[data-pick="p:${k}"]`); await pg.tap('[data-sel="g6"]'); await pg.tap('#mu-go'); await pg.waitForTimeout(150); }

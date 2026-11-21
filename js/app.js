@@ -86,7 +86,8 @@
   const frozen = () => revealed() || NOW() >= END.getTime() || trialDone();   // dopo mezzanotte, e dopo la cerimonia, si può solo guardare
   const certOpen = () => live() && currentDay() === CERT_DAY && (S.trial || certHour());
   const dayOf = e => e.day || serataOf(e.at || 0);
-  const JOLLY = "Premio presidenziale · ";
+  const JOLLY = "Jolly presidenziale · ";
+  const nameOf = label => String(label || "").split(" · ")[0];
   const baseReason = e => (e.reason || "").startsWith(JOLLY) ? e.reason.slice(JOLLY.length) : (e.reason || "");
   const dayLabel = d => `${wdLong(d).replace(/^./, c => c.toUpperCase())}`;
 
@@ -99,38 +100,47 @@
   /* Malus Ele (tenacia): se nella stessa giornata una persona prende di nuovo lo stesso malus, dalla seconda volta
      quel −1 vale come Malus Ele (es. inglesismo −1, bestemmia −1, bestemmia di nuovo: −1 di Malus Ele). È cumulabile:
      ogni ripetizione di ogni malus è un Malus Ele. Contano i malus della lista; quelli delle attività e delle mini-sfide no.
-     Premio presidenziale: si guadagna prendendo tutti i bonus fissi nella stessa giornata (una volta al giorno).
-     Se quel giorno hai preso malus te ne toglie uno (+1); se non ne hai vale +2.
-     Il Malus Ele già scattato resta. Né il Malus Ele né il Premio sono salvati: l'app li calcola ogni volta dai punti. */
+     Jolly presidenziale: si guadagna prendendo tutti i bonus fissi nella stessa giornata (una volta al giorno).
+     Si decide nel momento in cui scatta: se fino a lì hai preso malus te ne toglie uno (+1), altrimenti vale +2.
+     I malus che arrivano dopo valgono −1 come sempre.
+     Il Malus Ele già scattato resta. Né il Malus Ele né il Jolly sono salvati: l'app li calcola ogni volta dai punti. */
   const AUTO_REASON = "Malus Ele · tenacia";
   const isMalus = e => Number(e.delta) < 0 || (e.jolly === true && !e.plus2 && !e.derived);
   function allPoints(){
     const out = [...S.points];
-    const malusLabels = S.presets.filter(p => Number(p.delta) < 0 && !p.auto).map(p => p.label);
-    const bonusLabels = S.presets.filter(p => Number(p.delta) > 0 && !p.auto).map(p => p.label);
+    const malusLabels = S.presets.filter(p => Number(p.delta) < 0 && !p.auto).map(p => nameOf(p.label));
+    const bonusLabels = S.presets.filter(p => Number(p.delta) > 0 && !p.auto).map(p => nameOf(p.label));
     const days = {};
     for (const e of S.points){ const k = e.playerId + "|" + dayOf(e); (days[k] = days[k] || []).push(e); }
     for (const [k, list] of Object.entries(days)){
       /* Malus Ele: le ripetizioni dello stesso malus nella giornata diventano Malus Ele */
       const byLabel = {};
-      for (const e of list) if (Number(e.delta) < 0 && malusLabels.includes(baseReason(e))) (byLabel[baseReason(e)] = byLabel[baseReason(e)] || []).push(e);
+      for (const e of list){ const n = nameOf(baseReason(e)); if (Number(e.delta) < 0 && malusLabels.includes(n)) (byLabel[n] = byLabel[n] || []).push(e); }
       for (const reps of Object.values(byLabel)){
         reps.sort((a,b) => (a.at||0) - (b.at||0));
         for (const e of reps.slice(1)){ const i = out.indexOf(e); out[i] = {...e, reason: `${AUTO_REASON} (2ª volta: ${baseReason(e).split(" · ")[0]})`, auto:true, stored:true}; }
       }
-      /* Premio presidenziale */
+      /* Jolly presidenziale: scatta con l'ultimo bonus che mancava (per i cumulabili conta la prima volta) */
       if (!bonusLabels.length) continue;
-      const got = list.filter(e => Number(e.delta) > 0 && bonusLabels.includes(baseReason(e)));
-      if (!bonusLabels.every(l => got.some(e => baseReason(e) === l))) continue;
-      const last = got.sort((a,b) => (b.at||0) - (a.at||0))[0], anyMal = list.filter(x => Number(x.delta) < 0).sort((a,b) => (b.at||0) - (a.at||0));
-      out.push({id:"premio-" + k, playerId:last.playerId, delta: anyMal.length ? 1 : 2, activityId:"", day:dayOf(last), at:(last.at||0) + 2, jolly:true, derived:true, plus2:!anyMal.length, trial:last.trial,
+      const got = list.filter(e => Number(e.delta) > 0 && bonusLabels.includes(nameOf(baseReason(e))));
+      if (!bonusLabels.every(l => got.some(e => nameOf(baseReason(e)) === l))) continue;
+      const firstOf = l => got.filter(e => nameOf(baseReason(e)) === l).sort((a,b) => (a.at||0) - (b.at||0))[0];
+      const last = bonusLabels.map(firstOf).sort((a,b) => (b.at||0) - (a.at||0))[0];
+      const anyMal = list.filter(x => Number(x.delta) < 0 && (x.at||0) <= (last.at||0)).sort((a,b) => (b.at||0) - (a.at||0));
+      out.push({id:"jolly-" + k, playerId:last.playerId, delta: anyMal.length ? 1 : 2, activityId:"", day:dayOf(last), at:(last.at||0) + 2, jolly:true, derived:true, plus2:!anyMal.length, trial:last.trial,
         reason: JOLLY + (anyMal.length ? `tutti i bonus: toglie un malus (${baseReason(anyMal[0]).split(" · ")[0]})` : "tutti i bonus, nessun malus (+2)")});
     }
     return out;
   }
   const jollyTonight = pid => allPoints().some(e => e.derived && e.jolly && e.playerId === pid && dayOf(e) === currentDay());
   const eleTonight = pid => allPoints().filter(e => e.auto && e.playerId === pid && dayOf(e) === currentDay()).length;
-  const takenTonight = (pid, label) => S.points.some(e => e.playerId === pid && dayOf(e) === currentDay() && baseReason(e) === label);
+  const timesTonight = (pid, label) => S.points.filter(e => e.playerId === pid && dayOf(e) === currentDay() && nameOf(baseReason(e)) === nameOf(label)).length;
+  const takenTonight = (pid, label) => timesTonight(pid, label) > 0;
+  /* quante volte al giorno: bonus e Malus Federica 1; gli altri malus della lista 2 (la seconda vale come Malus Ele) */
+  const isPreset = it => (it.key || "").startsWith("p:");
+  const maxTonight = it => it.once ? 1 : isPreset(it) && it.delta < 0 && !it.auto ? 2 : Infinity;
+  const full = (pid, it) => timesTonight(pid, it.label) >= maxTonight(it);
+  const showLabel = it => isPreset(it) ? nameOf(it.label) : it.label;
 
   /* Cosa si può assegnare stasera: le regole delle attività della serata e i bonus/malus della settimana */
   function itemsTonight(){
@@ -263,7 +273,7 @@
     ? `<span class="av photo ${cls}" style="--pc:${colorOf(p)}"><img src="${PHOTOS_FUN[p.id]}" alt="" loading="lazy" decoding="async"></span>` : avatar(p, cls);
   const roleTag = p => p.role ? `<span class="role">${esc(p.role)}</span>` : "";
   function mineTag(p){
-    if (p.role === "Presidente") return `<span class="mine j">Premio presidenziale</span>`;
+    if (p.role === "Presidente") return `<span class="mine j">Jolly presidenziale</span>`;
     const m = mineOf(p.id);
     return m ? `<span class="mine ${m.delta>=0?"b":"m"}">${m.delta>=0?"Bonus":"Malus"}: ${esc(m.short || m.label)}</span>` : "";
   }
@@ -314,7 +324,7 @@
       <div class="rfacts">
         ${climb && climb[1] > 0 ? `<span><b>${esc(climb[0].name)}</b> sale di ${climb[1]} ${climb[1] === 1 ? "posto" : "posti"}</span>` : ""}
         ${worst ? `<span>Più malus: <b>${esc(player(worst[0]).name)}</b> (${worst[1]})</span>` : ""}
-        <span>Malus Ele scattati: <b>${ele}</b></span><span>Premi presidenziali: <b>${jol}</b></span>
+        <span>Malus Ele scattati: <b>${ele}</b></span><span>Jolly usati: <b>${jol}</b></span>
       </div>
       <div><div class="lbl">Bonus e malus di ieri</div>${dayBreakdownHTML(y)}</div></div>`;
   }
@@ -466,7 +476,7 @@
         ${frozen() ? "" : `<span class="lact admin-only"><button class="btn danger small" data-del="extras/${esc(e.id)}">Elimina</button></span>`}</li>`;
       const p = player(e.playerId), a = S.activities.find(x => x.id === e.activityId), d = Number(e.delta) || 0, dd = dayOf(e);
       const reason = e.reason || (d >= 0 ? "Bonus" : "Malus"), [r1, ...rr] = reason.split(" · ");
-      const tag = reason.startsWith("Certificato · ") ? "certificato" : e.auto ? "automatico" : e.jolly ? "premio" : isMini(e) ? "mini-sfida" : a ? a.title : "";
+      const tag = reason.startsWith("Certificato · ") ? "certificato" : e.auto ? "automatico" : e.jolly ? "jolly" : isMini(e) ? "mini-sfida" : a ? a.title : "";
       return `<li class="lev ${d >= 0 ? "b" : "m"}">${p ? avatar(p, "lav") : `<span class="av lav">?</span>`}
         <span class="lt"><b>${esc(p ? p.name : "Giocatore rimosso")}</b><span class="lr">${esc(r1)}${rr.length ? ` <span class="lr2">· ${esc(rr.join(" · "))}</span>` : ""}</span>${tag || e.trial ? `<span class="ltags">${tag ? `<span class="ltag">${esc(tag)}</span>` : ""}${e.trial ? `<span class="ltag pr">prova</span>` : ""}</span>` : ""}</span>
         <span class="lside"><span class="lpt ${d >= 0 ? "b" : "m"}">${sign(d)}</span><span class="ltime">${time}</span></span>
@@ -485,12 +495,12 @@
 
   /* ---------- regole ---------- */
   function renderPresets(){
-    const kind = p => p.auto ? `<span class="ktag auto">automatico</span>` : Number(p.delta) < 0 ? `<span class="ktag cum">dalla 2ª volta: Malus Ele</span>` : p.once ? `<span class="ktag">1 volta al giorno</span>` : `<span class="ktag cum">cumulabile</span>`;
+    const kind = p => p.auto ? `<span class="ktag auto">automatico</span>` : Number(p.delta) < 0 && !p.once ? `<span class="ktag cum">max 2 al giorno: la 2ª è Malus Ele</span>` : p.once ? `<span class="ktag">1 volta al giorno</span>` : `<span class="ktag cum">cumulabile</span>`;
     const cap = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
     const row = p => { const o = player(p.owner), name = p.label.split(" · ")[0];
       return `<li class="bm ${p.delta >= 0 ? "b" : "m"}">
         ${o ? funAvatar(o, "bm-av") : `<span class="av bm-av" style="--pc:var(--card-2)">${p.delta >= 0 ? "+" : "−"}</span>`}
-        <span class="bm-t"><span class="bm-k">${esc(name)}</span><b>${esc(cap(p.short || p.label))}</b>${kind(p)}</span>
+        <span class="bm-t"><span class="bm-k">${esc(name)}</span><b>${esc(cap(p.short || p.label))}</b>${p.desc ? `<span class="bm-d">${esc(p.desc)}</span>` : ""}${kind(p)}</span>
         <span class="bm-v">${sign(p.delta)}</span></li>`; };
     const sorted = [...S.presets].sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
     const b = sorted.filter(p => p.delta >= 0), m = sorted.filter(p => p.delta < 0);
@@ -505,7 +515,7 @@
     const dir = S.players.filter(p => p.role).sort((a,b) => order.indexOf(a.role) - order.indexOf(b.role));
     const pres = dir.find(p => p.role === "Presidente"), others = dir.filter(p => p !== pres);
     return (pres ? `<div class="dir-pres"><div class="dir-ph">${CROWN}${avatar(pres, "dir-av big")}</div>
-        <div class="dir-tx"><span class="role">Presidente</span><b>${esc(pres.name)}</b><span class="dir-j"><span class="jbadge">P</span>Il Premio presidenziale porta il suo nome</span></div></div>` : "")
+        <div class="dir-tx"><span class="role">Presidente</span><b>${esc(pres.name)}</b><span class="dir-j"><span class="jbadge">J</span>Il Jolly presidenziale porta il suo nome</span></div></div>` : "")
       + `<div class="dir-grid">${others.map(p => `<div class="dir-c">${avatar(p, "dir-av")}<b>${esc(p.name)}</b><span class="role">${esc(p.role)}</span></div>`).join("")}</div>`;
   }
   function render(){ renderCount(); renderMode(); renderBoard(); renderDays(); renderLog(); renderPresets(); refreshSheet(); keepAwake(wantAwake()); }
@@ -521,7 +531,7 @@
     return note.replace("margin:6px 0 0", "margin:0 0 8px") + `<ul class="sum">${rows.map(([k,x]) => `<li><span class="pill ${x.tot>=0?"b":"m"}">${sign(x.tot) || "0"}</span><span>${esc(k)}</span><span class="x">×${x.n}</span></li>`).join("")}</ul>`;
   }
   const head = p => { const m = mineOf(p.id); return `<div class="grab" aria-hidden="true"></div><div class="sh-head">${avatar(p)}<div class="who"><span class="n" id="sh-name">${esc(p.name)}${roleTag(p)}</span><span class="s">punti totali</span></div><span class="tot" id="sh-tot"></span></div>
-    ${p.role === "Presidente" ? `<div class="mine-card j"><span class="pill jp">P</span><span>Il Premio presidenziale porta il suo nome</span></div>`
+    ${p.role === "Presidente" ? `<div class="mine-card j"><span class="pill jp">J</span><span>Il Jolly presidenziale porta il suo nome</span></div>`
       : m ? `<div class="mine-card ${m.delta>=0?"b":"m"}"><span class="pill ${m.delta>=0?"b":"m"}">${sign(m.delta)}</span><span>Il suo ${m.delta>=0?"bonus":"malus"}: ${esc(m.label)}</span></div>` : ""}`; };
   const serataPill = () => `<div class="serata"><span class="dot"></span>Oggi · <b>${esc(dayLabel(currentDay()))}</b>${S.trial ? " · prova" : ""}</div>`;
   const closedNote = () => `<p class="closed">${new Date(NOW()) < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre." : live() ? "Consegna dei certificati in corso: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
@@ -529,8 +539,9 @@
   /* chip di un bonus/malus: disattivato se automatico o se è da 1 volta e la persona l'ha già preso stasera */
   function itemChip(it, attr, pid){
     if (it.auto) return `<span class="chip m auto" aria-disabled="true"><span class="v">${sign(it.delta)}</span>${esc(it.label.split(" · ")[0])} <em>(viene applicato in automatico)</em></span>`;
-    const done = pid && it.once && takenTonight(pid, it.label);
-    return `<button class="chip ${it.delta>=0?"b":"m"} ${done?"done":""}" ${attr} ${done ? 'aria-disabled="true"' : ""}><span class="v">${sign(it.delta)}</span><span class="lb">${esc(it.label)}</span>${it.once ? `<span class="once">${done ? "✓ preso oggi" : "1 al giorno"}</span>` : ""}</button>`;
+    const done = pid && full(pid, it), max = maxTonight(it);
+    const note = max === 1 ? (done ? "✓ preso oggi" : "1 al giorno") : max === 2 ? (done ? "✓ già 2 volte" : pid && timesTonight(pid, it.label) ? "la prossima è Malus Ele" : "max 2 al giorno") : "";
+    return `<button class="chip ${it.delta>=0?"b":"m"} ${done?"done":""}" ${attr} ${done ? 'aria-disabled="true"' : ""}><span class="v">${sign(it.delta)}</span><span class="lb">${esc(showLabel(it))}</span>${note ? `<span class="once">${note}</span>` : ""}</button>`;
   }
   function itemsBlocks(pid, attrOf){
     const its = itemsTonight(), groups = [];
@@ -583,7 +594,7 @@
   function renderMulti(){
     const m = sheet.multi, it = m.key ? itemByKey(m.key) : null;
     if (m.key && !it){ m.key = ""; }
-    const blocked = pid => !it ? false : (it.once && takenTonight(pid, it.label));
+    const blocked = pid => !it ? false : full(pid, it);
     $("mu-items").innerHTML = itemsBlocks(null, x => `data-pick="${esc(x.key)}" aria-pressed="${x.key === m.key}"`);
     for (const pid of [...m.sel]) if (blocked(pid)) m.sel.delete(pid);
     $("mu-grid").innerHTML = [...S.players].sort((x,y) => x.name.localeCompare(y.name)).map(p => {
@@ -598,7 +609,8 @@
   function warnTaken(pid, key){
     const p = player(pid);
     const it = itemByKey(key);
-    toast(`Attenzione: ${p.name} ha già preso «${it ? it.label : "questo"}» oggi. Vale una volta al giorno, non lo assegno di nuovo.`, null, true);
+    toast(it && maxTonight(it) === 2 ? `Attenzione: ${p.name} ha già preso «${showLabel(it)}» due volte oggi (la seconda era Malus Ele). Non lo assegno di nuovo.`
+      : `Attenzione: ${p.name} ha già preso «${it ? showLabel(it) : "questo"}» oggi. Vale una volta al giorno, non lo assegno di nuovo.`, null, true);
   }
   function closeSheet(){ sheet = null; $("sheet-root").innerHTML = ""; }
   function refreshSheet(){
@@ -620,7 +632,7 @@
   async function savePoints(pids, it){
     const refs = [], eleFor = [], jollyFor = [];
     for (const pid of pids){
-      if (it.once && takenTonight(pid, it.label)) continue;
+      if (full(pid, it)) continue;
       const eleBefore = eleTonight(pid), jollyBefore = it.delta > 0 && jollyTonight(pid);
       const ref = db.collection("points").doc();
       const ok = await write(() => ref.set({playerId:pid, delta:it.delta, reason:it.label, activityId:it.activityId || "", day:currentDay(), at:NOW(), ...(S.trial ? {trial:true} : {})}));
@@ -635,7 +647,7 @@
     const {refs, eleFor, jollyFor} = await savePoints([pid], it);
     if (!refs.length) return;
     if (srcEl) burst(srcEl, it.delta > 0, jollyFor.length > 0);
-    toast(`${sign(it.delta)} a ${player(pid).name} · ${it.label}${eleFor.length ? ". È la seconda volta: vale come Malus Ele" : ""}${jollyFor.length ? ". Tutti i bonus: Premio presidenziale!" : ""}`, () => write(() => refs[0].delete()));
+    toast(`${sign(it.delta)} a ${player(pid).name} · ${showLabel(it)}${eleFor.length ? ". È la seconda volta: vale come Malus Ele" : ""}${jollyFor.length ? ". Tutti i bonus: scatta il Jolly presidenziale!" : ""}`, () => write(() => refs[0].delete()));
   }
   async function giveMany(srcEl){
     const m = sheet.multi;
@@ -644,7 +656,7 @@
     if (!refs.length) return;
     burst(srcEl, it.delta > 0, jollyFor.length > 0);
     m.sel.clear(); refreshSheet();
-    toast(`${sign(it.delta)} · ${it.label} a ${refs.length} ${refs.length === 1 ? "persona" : "persone"}${eleFor.length ? `. Malus Ele per ${eleFor.join(", ")}` : ""}${jollyFor.length ? `. Premio presidenziale per ${jollyFor.join(", ")}` : ""}`,
+    toast(`${sign(it.delta)} · ${showLabel(it)} a ${refs.length} ${refs.length === 1 ? "persona" : "persone"}${eleFor.length ? `. Malus Ele per ${eleFor.join(", ")}` : ""}${jollyFor.length ? `. Jolly presidenziale per ${jollyFor.join(", ")}` : ""}`,
       async () => { for (const r of refs) await write(() => r.delete()); });
   }
   async function setTrial(day){
@@ -832,7 +844,7 @@
       ["Bonus assegnati", pts.filter(e => Number(e.delta) > 0 && !e.jolly && !isCert(e)).length, "b"],
       ["Malus presi", pts.filter(e => Number(e.delta) < 0 && !e.auto).length, "m"],
       ["Malus Ele scattati", pts.filter(e => e.auto).length, "m"],
-      ["Premi presidenziali", pts.filter(e => e.jolly).length, "j"],
+      ["Jolly del Presidente", pts.filter(e => e.jolly).length, "j"],
       ["Mini-sfide giocate", S.extras.filter(x => x.type !== "cert").length, "x"],
       ["Certificati consegnati", certsOf(CERT_DAY).length, "c"]];
     const days = DAYS.map(d => ({d, acts:actsOf(d).map(a => a.id), n:pts.filter(e => dayOf(e) === d && !e.auto).length}));
@@ -841,7 +853,7 @@
     const titles = [
       ["Re dei malus", "😈", best(e => Number(e.delta) < 0 && !e.auto), ["malus preso", "malus presi"]],
       ["Collezionista di bonus", "🌟", best(e => Number(e.delta) > 0 && !e.jolly && !isCert(e)), ["bonus preso", "bonus presi"]],
-      ["Il più premiato dal Presidente", "🏅", best(e => e.jolly), ["Premio presidenziale", "Premi presidenziali"]],
+      ["Il più graziato dal Jolly", "🃏", best(e => e.jolly), ["Jolly ricevuto", "Jolly ricevuti"]],
       ["Campione delle mini-sfide", "⚡", best(e => isMiniPt(e) && Number(e.delta) > 0), ["mini-sfida vinta", "mini-sfide vinte"]],
       ["Bestemmiatore ufficiale", "🤬", best(e => baseReason(e).startsWith("Malus Jacopo")), ["volta", "volte"]],
       ["Tenacia di ferro", "🔥", best(e => e.auto), ["Malus Ele", "Malus Ele"]],
@@ -1250,7 +1262,7 @@
       for (let k = 0, n = 6 + rnd(4); k < n; k++){ const p = pick(Math.random() < .55 && bon.length ? bon : mal), pid = pick(ids), key = pid + p.label;
         if (p.once && taken.has(key)) continue; taken.add(key); add(pid, p.delta, p.label, day, rnd(200)); }
     }
-    /* due Premi presidenziali, che scattano da soli: una persona prende tutti i bonus il 24 senza malus, un'altra il 22 con un malus */
+    /* due Jolly, che scattano da soli: una persona prende tutti i bonus il 24 senza malus, un'altra il 22 con un malus */
     const allBon = presets.filter(p => p.delta > 0), [j1, j2] = shuffle(ids);
     for (const [pid, day, withMalus] of [[j1, "2026-12-24", false], [j2, "2026-12-22", true]]){
       if (!withMalus) for (let i = pts.length - 1; i >= 0; i--) if (pts[i].playerId === pid && pts[i].day === day && pts[i].delta < 0) pts.splice(i, 1);
@@ -1331,7 +1343,7 @@
     if (!S.admin || !S.activities.length) return;
     for (const [id, v] of Object.entries(SEED.activities)) if (!S.activities.some(a => a.id === id)) await write(() => db.doc("activities/" + id).set(v));
     /* bonus e malus: nell'app non si modificano, quindi il database segue sempre js/dati.js */
-    const same = (a, b) => ["label","short","delta","owner","once","auto"].every(k => (a[k] ?? null) === (b[k] ?? null));
+    const same = (a, b) => ["label","short","desc","delta","owner","once","auto"].every(k => (a[k] ?? null) === (b[k] ?? null));
     for (const [id, v] of Object.entries(SEED.presets)){ const cur = S.presets.find(p => p.id === id); if (!cur || !same(cur, v)) await write(() => db.doc("presets/" + id).set(v)); }
     for (const p of S.presets) if (!SEED.presets[p.id]) await write(() => db.doc("presets/" + p.id).delete());
   }

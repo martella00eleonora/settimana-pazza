@@ -32,19 +32,19 @@ const SEED = {
     premi: A("2026-12-27", 8, "Premiazione finale", "", ["Chi è in testa alla classifica vince la Settimana Pazza Winter 26/27."], [])
   },
   presets: Object.fromEntries([
-    // [nome, motivo, punti, di chi è, quante volte a serata: "once" = 1 volta, "cum" = si può ripetere (per i malus la ripetizione diventa Malus Ele), "auto" = automatico]
-    ["Bonus Bardahan", "bevi un alcolico", 1, "g0", "once"],
-    ["Bonus Coronaus", "oggi guidi tu! Valido anche per chi prende la macchina e la lascia a casa di qualcuno", 1, "g3", "once"],
-    ["Bonus Laura", "entusiasmo: ti sei fatto notare! Punto dato a maggioranza", 1, "g10", "once"],
-    ["Malus Ele", "tenacia: hai perseverato nel prendere per la seconda volta lo stesso malus nella stessa giornata. Scatta da solo ed è cumulabile: vale per ogni malus ripetuto", -1, "g2", "auto"],
-    ["Malus Jacopo", "bestemmia", -1, "g11", "cum"],
-    ["Malus Federica", "fai un ritardo superiore ai 20 minuti", -1, "g7", "cum"],
-    ["Malus Mg", "hai usato un inglesismo", -1, "g1", "cum"],
-    ["Malus Antonio", "sei stato beccato a scrollare i social (WhatsApp non conta)", -1, "g6", "cum"],
-    ["Malus Cristiana", "non rispondi ai messaggi durante l'organizzazione delle attività. Vale se vieni richiamato a rispondere due volte", -1, "g4", "cum"],
-    ["Bonus Mariangela", "hai fatto le ore piccole! Sei rimasto fino alla fine della serata. Vale solo se rientri dopo l'una di notte", 1, "g5", "once"],
-    ["Bonus Andrea", "questo giro lo offro io! Valgono alcolici e non, il cibo no. Il giro va offerto ad almeno tre persone, te compreso", 1, "g8", "once"]
-  ].map(([name, short, delta, owner, kind], i) => ["p" + i, {label: name + " · " + short, short, delta, owner, once: kind === "once", auto: kind === "auto", createdAt:i}])),
+    // [nome, titolo, descrizione, punti, di chi è, quante volte a serata: "once" = 1 volta, "cum" = si può ripetere (per i malus la ripetizione vale come Malus Ele), "auto" = automatico]
+    ["Bonus Bardahan", "Alcolico", "Bevi un alcolico.", 1, "g0", "once"],
+    ["Bonus Coronaus", "Oggi guidi tu!", "Valido anche per chi prende la macchina e la lascia a casa di qualcuno.", 1, "g3", "once"],
+    ["Bonus Laura", "Entusiasmo", "Ti sei fatto notare! Punto dato a maggioranza.", 1, "g10", "cum"],
+    ["Malus Ele", "Tenacia", "Hai preso per la seconda volta lo stesso malus nella stessa giornata. Scatta da solo ed è cumulabile: vale per ogni malus ripetuto.", -1, "g2", "auto"],
+    ["Malus Jacopo", "Bestemmia", "Non cumulabile: dalla seconda nella stessa giornata vale come Malus Ele.", -1, "g11", "cum"],
+    ["Malus Federica", "Ritardo", "Fai un ritardo superiore ai 20 minuti.", -1, "g7", "once"],
+    ["Malus Mg", "Inglesismo", "Hai usato un inglesismo.", -1, "g1", "cum"],
+    ["Malus Antonio", "Social", "Sei stato beccato a scrollare i social (WhatsApp non conta).", -1, "g6", "cum"],
+    ["Malus Cristiana", "Non rispondi", "Non rispondi ai messaggi durante l'organizzazione delle attività. Vale se vieni richiamato a rispondere due volte.", -1, "g4", "cum"],
+    ["Bonus Mariangela", "Ore piccole", "Hai partecipato a una serata e sei rimasto fino alla fine. Valido solo se rientri dopo l'una di notte.", 1, "g5", "once"],
+    ["Bonus Andrea", "Questo giro lo offro io!", "Offri da bere (alcolici e non) o altro. Il giro va offerto ad almeno tre persone, te compreso.", 1, "g8", "cum"]
+  ].map(([name, short, desc, delta, owner, kind], i) => ["p" + i, {label: name + " · " + short, short, desc, delta, owner, once: kind === "once", auto: kind === "auto", createdAt:i}])),
   points: {}
 };
 
@@ -66,7 +66,7 @@ const PHOTOS = {
 /* foto "come tutti gli altri" (sfondo colorato) per chi nel Direttivo ha la foto ufficiale:
    si usano nella scheda dei bonus e malus e nella fila di volti dei ringraziamenti */
 const PHOTOS_FUN = {
-  "g2": "foto/profili/ele-blu.jpg",
+  "g2": "foto/profili/ele-rossa.jpg",
   "g3": "foto/profili/coronaus-blu.jpg",
   "g10": "foto/profili/laura-blu.jpg"
 };
