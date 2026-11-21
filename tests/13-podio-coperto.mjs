@@ -11,9 +11,18 @@ for (let i=0;i<40 && !(await pg.$('.ri-stage'));i++){ await pg.$eval('[data-cer=
 for (let i=0;i<40;i++){ const n = await pg.$('#cer:not(.winner) [data-cer="next"]'); if (!n) break; const t = await n.textContent(); R.btns.push(t);
   await n.evaluate(e=>e.click()); await pg.waitForTimeout(200);
   if (t === 'Il podio'){ await pg.waitForTimeout(900); await pg.screenshot({path:'look/i-pod0.png'}); }
-  if (t === 'Svela il 3° posto'){ await pg.waitForTimeout(900); await pg.screenshot({path:'look/i-drum3.png'}); await pg.waitForTimeout(2600); await pg.screenshot({path:'look/i-pod3.png'}); }
-  if (t === 'Svela il 2° posto'){ await pg.waitForTimeout(3500); await pg.screenshot({path:'look/i-pod2.png'}); }
+  if (t === 'Svela il 3° posto'){ await pg.waitForTimeout(900); await pg.screenshot({path:'look/i-drum3.png'}); await pg.waitForTimeout(2600); await pg.screenshot({path:'look/i-pod3.png'});
+    R.duel = await pg.$$eval('.duel .dp b', e=>e.map(x=>x.textContent)); R.duelText = await pg.textContent('.su-t'); }
+  if (t === 'Svela il vincitore'){ await pg.waitForTimeout(1000); await pg.screenshot({path:'look/i-roulette.png'}); R.roulette = await pg.$$eval('.wd-duel .av', e=>e.length); }
 }
-await pg.waitForTimeout(6000); R.winner = await pg.textContent('.win-name');
+await pg.waitForTimeout(6000); R.winner = await pg.textContent('.win-name'); await pg.screenshot({path:'look/i-win.png'});
+// dopo il duello e il vincitore, il podio completo
+R.afterWin = await pg.textContent('#cer.winner [data-cer="next"]');
+await pg.$eval('[data-cer="next"]', e=>e.click()); await pg.waitForTimeout(2500); await pg.screenshot({path:'look/i-podfinal.png'});
+R.gold = await pg.textContent('.su-first.won b'); R.silver = await pg.textContent('.su-side.m2 b'); R.bronze = await pg.textContent('.su-side.m3 b');
+R.last = await pg.textContent('[data-cer="next"]');
+const ok = JSON.stringify(R.btns.slice(-3)) === JSON.stringify(['Il podio','Svela il 3° posto','Svela il vincitore']) && R.afterWin === 'Il podio completo' && JSON.stringify(R.duel) === '["Ele","Mary"]' && /Chi vince tra Ele e Mary\?/.test(R.duelText) && R.roulette === 2
+  && R.gold === R.winner && R.gold === 'Ele' && R.silver === 'Mary' && R.bronze === 'Bardy' && R.last === 'Un ultimo saluto';
+if (!ok) errs.push('ordine del podio sbagliato');
 console.log(JSON.stringify(R), errs); await b.close();
 if (errs.length) process.exitCode = 1;   // errori JavaScript nella pagina = prova fallita

@@ -10,7 +10,8 @@ await pg.tap('[data-bmode="day"]'); await pg.waitForTimeout(200); R.daysBefore =
 await pg.tap('[data-bmode="week"]');
 await pg.tap('#adm-fab'); await pg.tap('[data-trial="closing"]'); await pg.waitForTimeout(3600);
 for (let i=0;i<40;i++){ const n = await pg.$('#cer:not(.winner) [data-cer="next"]'); if (!n) break; await n.evaluate(e=>e.click()); await pg.waitForTimeout(120); }
-await pg.waitForTimeout(6000); await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300);
+await pg.waitForTimeout(6000); // avanti fino a «Chiudi» (dopo il vincitore: podio completo e ringraziamenti)
+for (let i=0;i<5 && !(await pg.$('[data-cer="close"]'));i++){ await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(400); } await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300);
 await pg.tap('[data-bmode="day"]'); await pg.waitForTimeout(200); R.daysAfter = await pg.$$eval('[data-bday]', e=>e.length);
 R.empty = await pg.$$eval('#board .empty', e=>e.map(x=>x.textContent));
 console.log(R, errs); await b.close();

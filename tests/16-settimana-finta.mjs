@@ -16,7 +16,8 @@ const pages = [];
 for (let i=0;i<60;i++){ const n = await pg.$('#cer:not(.winner) [data-cer="next"]'); if (!n) break; pages.push(await n.textContent()); await n.evaluate(e=>e.click()); await pg.waitForTimeout(120); }
 R.passi = pages.length; R.titoli = pages.filter(x=>x==='Prossimo titolo').length + 1; R.cert = pages.filter(x=>x==='Prossimo certificato').length + 1;
 await pg.waitForTimeout(5000); R.vincitore = await pg.textContent('.win-name');
-await pg.$eval('[data-cer="next"]', e=>e.click()); await pg.waitForTimeout(300); await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300);
+// avanti fino a «Chiudi» (dopo il vincitore: podio completo e ringraziamenti)
+for (let i=0;i<5 && !(await pg.$('[data-cer="close"]'));i++){ await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(400); } await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300);
 await pg.tap('#adm-fab'); await pg.waitForTimeout(500); await pg.$eval('[data-trial=""]', e=>e.click()); await pg.waitForTimeout(800);
 R.dopoUscita = await pg.evaluate(k=>{const d=JSON.parse(localStorage.getItem(k)); return [Object.keys(d.points).length, Object.keys(d.extras||{}).length, Object.keys(d.settings||{}).length];}, K);
 console.log(JSON.stringify(R,null,1), errs); await b.close();

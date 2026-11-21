@@ -797,6 +797,7 @@
     else if (page.startsWith("cert")){ P("whoosh"); P("stamp", .3); P("sparkle", .6); }
     else if (page === "rank-intro"){ P("boom"); P("chime", .7); }
     else if (page === "podium"){ P("boom"); P("drumroll", .2, .9); P("boom", 1.15); }
+    else if (page === "podfinal"){ P("chime"); P("fanfare", .3); P("applause", .4, 2.5, .7); }
     else if (page.startsWith("pod")){ P("drumroll", 0, 1.75); P("crash", 1.75); P("applause", 1.9, 2.2, .6); }
     else if (page === "thanks"){ P("jingle", .3); P("applause", 0, 3.5, .5); }
     else if (info.winner){ P("drumroll", 0, 2.9); P("crash", 2.9); P("fanfare", 3.1); P("applause", 3.1, 6, 1); }
@@ -903,18 +904,28 @@
       : `<div class="cert-grid">${certList.map((c, i) => `<div class="cert-card" style="--d:${i * .15}s"><span class="seal big" aria-hidden="true">★</span>
           <div class="cc-name">${esc(c.label.replace(/^Certificato · /, ""))}</div>
           <div class="cc-who">${c.ids.map(player).filter(Boolean).map(p => `<span class="cc-p">${avatar(p)}<b>${esc(p.name)}</b></span>`).join("")}</div></div>`).join("")}</div>`;
-    /* classifica: dall'ultimo al 4° una pagina a testa; poi il podio coperto, che si scopre dal 3° al 1° */
+    /* classifica: dall'ultimo al 4° una pagina a testa; poi il podio coperto con i tre finalisti, il 3°,
+       il duello finale fra i due rimasti (vincitore e 2° si scoprono insieme) e il podio completo */
     const podR = order.filter(r => r <= 3 && r !== 1);
     function rankPages(){ const out = [];
-      order.forEach((r, i) => { if (r <= 3 && podR.length && !out.includes("podium")) out.push("podium"); out.push(r <= 3 && r !== 1 ? "pod" + r : "rank" + (i + 1)); });
+      order.forEach((r, i) => { if (r <= 3 && podR.length && !out.includes("podium")) out.push("podium");
+        if (r === 2) return;
+        out.push(r === 3 ? "pod3" : "rank" + (i + 1)); });
+      if (podR.length) out.push("podfinal");
       return out; }
+    /* i finalisti (dal 1° al 3°) e i duellanti (1° e 2°), in ordine di nome per non tradire niente */
+    const byName = list => [...list].sort((a, b) => a.p.name.localeCompare(b.p.name));
+    const finalists = byName(cer.list.filter(x => x.rank <= 3)), rivals = byName(cer.list.filter(x => x.rank <= 2));
+    const duelNames = rivals.map(x => esc(x.p.name)).reduce((t, n, i, a) => i === 0 ? n : t + (i === a.length - 1 ? " e " : ", ") + n, "");
     /* le pagine della cerimonia, in ordine: un tocco dell'admin = una pagina avanti per tutti */
     const X = cer.extra || {}, titles = X.titles || [];
     const pages = ["intro", "numbers", "days", ...(titles.length ? titles.map((_, i) => "title" + i) : ["title-none"]), ...(certList.length ? ["cert-intro", ...certList.map((_, i) => "cert" + i)] : ["cert-none"]), "rank-intro", ...rankPages(), "thanks"];
     const page = pages[Math.min(st, pages.length - 1)], nextPage = pages[Math.min(st, pages.length - 1) + 1] || "";
     /* pulsante verso la pagina successiva della classifica */
-    const rankOf = pg => pg.startsWith("pod") && pg !== "podium" ? Number(pg.slice(3)) : pg.startsWith("rank") && pg !== "rank-intro" ? order[Number(pg.slice(4)) - 1] : null;
-    const goNext = () => { const r = rankOf(nextPage);
+    const rankOf = pg => pg.startsWith("pod") && pg !== "podium" && pg !== "podfinal" ? Number(pg.slice(3)) : pg.startsWith("rank") && pg !== "rank-intro" ? order[Number(pg.slice(4)) - 1] : null;
+    const goNext = () => { if (nextPage === "thanks") return goBtn("Un ultimo saluto", "Il Direttivo ha ancora una cosa da dirvi…");
+      if (nextPage === "podfinal") return goBtn("Il podio completo", "Ecco il podio…");
+      const r = rankOf(nextPage);
       const label = nextPage === "podium" ? "Il podio" : r === 1 ? "Svela il vincitore" : nextPage === "rank1" ? `Svela l'ultimo posto (${r}°)` : `Svela il ${r}° posto`;
       const wait = nextPage === "podium" ? "Sta per arrivare il podio…" : `Il Direttivo sta per svelare ${r === 1 ? "il vincitore" : "il " + r + "° posto"}…`;
       return cer.remote ? `<p class="count-cap">${wait}</p>` : `<button class="btn gold big ${r === 1 ? "drum" : ""}" data-cer="next" type="button">${label}</button>`; };
@@ -997,18 +1008,25 @@
         <p class="ri-t">${cer.list.length} giocatori, sette giornate, <b>un solo vincitore</b></p>
         <div class="ri-faces" aria-hidden="true">${cer.list.map((x, i) => `<span style="--i:${i}">${avatar(x.p)}</span>`).join("")}</div></div>
       ${goNext()}`;
-    else if (page === "podium" || (page.startsWith("pod") && rankOf(page))){
-      const fresh = page === "podium" ? null : rankOf(page), shown = fresh ? podR.slice(0, podR.indexOf(fresh) + 1) : [];
+    else if (page === "podium" || page === "podfinal" || (page.startsWith("pod") && rankOf(page))){
+      const all = page === "podfinal", fresh = page === "pod3" ? 3 : null, shown = all ? podR : fresh ? [3] : [];
+      const winOut = all;
+      const duel = !all && rivals.length > 1 && (page === "pod3" || !order.includes(3));
       const step = r => `<span class="su-step">${r}°</span>`;
-      const col = r => { if (r === 1) return `<div class="su-first"><span class="su-spot" aria-hidden="true"></span>${CROWN}<span class="su-q">?</span>${step(1)}</div>`;
+      const col = r => { if (r === 1 && winOut){ const ws = placeOf(1); return `<div class="su-first won">${CROWN}<div class="su-ps">${ws.map(x => avatar(x.p)).join("")}</div><b>${ws.map(x => esc(x.p.name)).join(", ")}</b><span class="su-pt">${pts(ws[0].r.tot)}</span>${step(1)}</div>`; }
+        if (r === 1) return `<div class="su-first"><span class="su-spot" aria-hidden="true"></span>${CROWN}<span class="su-q">?</span>${step(1)}</div>`;
         if (!order.includes(r)) return `<div class="su-side"></div>`;
         const ps = placeOf(r);
         return shown.includes(r) ? `<div class="su-side m${r} ${r === fresh ? "fresh" : ""}"><div class="su-ps">${ps.map(x => avatar(x.p)).join("")}</div><b>${ps.map(x => esc(x.p.name)).join(", ")}</b><span class="su-pt">${pts(ps[0].r.tot)}</span>${step(r)}</div>`
           : `<div class="su-side m${r}"><span class="su-q sm">?</span><b>&nbsp;</b><span class="su-pt">&nbsp;</span>${step(r)}</div>`; };
       body = `${fresh ? `<div class="win-drum short" aria-hidden="true"><div class="wd-k">Il ${fresh}° posto va a…</div><div class="wd-ball"><span>?</span></div><div class="wd-dots"><i></i><i></i><i></i></div></div>` : ""}
-        <div class="eyebrow">Classifica finale · il podio</div><h2 class="su-h">${fresh === 2 ? "Chi vince?" : "Il podio"}</h2>
+        <div class="eyebrow">Classifica finale · il podio</div><h2 class="su-h">${duel ? "Il duello finale" : "Il podio"}</h2>
         <div class="su-pod">${col(2)}${col(1)}${col(3)}</div>
-        <p class="su-t">${fresh === 2 ? `Sette giornate, ${cer.list.length} giocatori, un solo nome.` : fresh ? "Restano due gradini da scoprire." : "Tre gradini, tre nomi ancora da scoprire."}</p>
+        ${duel ? `<div class="duel">${rivals.map((x, i) => `${i ? `<span class="vs" aria-hidden="true">VS</span>` : ""}<div class="dp">${avatar(x.p)}<b>${esc(x.p.name)}</b></div>`).join("")}</div>
+          <p class="su-t">Chi vince tra <b>${duelNames}</b>?</p>`
+        : all ? `<p class="su-t">Ecco il podio della Settimana Pazza Winter Edition 2026!</p>`
+        : `<div class="su-fin"><div class="lbl">I finalisti</div><div class="su-faces">${finalists.map(x => avatar(x.p)).join("")}</div></div>
+          <p class="su-t">Tre gradini, tre nomi: uno di loro vince la Settimana Pazza.</p>`}
         ${goNext()}`;
     }
     else {
@@ -1018,13 +1036,21 @@
         cer.winFx = false; fireworks.intense = false;
       } else {
         const ws = placeOf(1);
-        body = `<div class="win-drum" aria-hidden="true"><div class="wd-k">E il vincitore della Settimana Pazza è…</div><div class="wd-ball"><span>?</span></div><div class="wd-dots"><i></i><i></i><i></i></div></div>
+        const roulette = rivals.length > 1 && order.includes(2);
+        body = `<div class="win-drum" aria-hidden="true"><div class="wd-k">E il vincitore della Settimana Pazza è…</div>${roulette
+            ? `<div class="wd-duel">${rivals.map(x => avatar(x.p, x.rank === 1 ? "w" : "")).join("")}</div>` : `<div class="wd-ball"><span>?</span></div>`}<div class="wd-dots"><i></i><i></i><i></i></div></div>
           <div class="win-stage"><div class="rays" aria-hidden="true"></div>
             <div class="win-kicker">E il vincitore della Settimana Pazza è…</div>
             <div class="win-who">${ws.map(x => `<div class="win-p">${CROWN}${avatar(x.p, "xl win-av")}<b class="win-name">${esc(x.p.name)}</b></div>`).join("")}</div>
             <div class="win-pt">${pts(ws[0].r.tot)}${ws.length > 1 ? " · pari merito" : ""}</div></div>
           <div class="win-after">${doneList(before)}
-          ${goBtn("Un ultimo saluto", "Il Direttivo ha ancora una cosa da dirvi…")}</div>`;
+          ${goNext()}</div>`;
+        if (roulette && !reduce && cer.rlPage !== page){ cer.rlPage = page; const me = cer;
+          /* le foto si accendono a turno, sempre più veloci, e si fermano sul vincitore poco prima del lampo */
+          let t = 0, gap = 360, i = 0; const step = (k, last) => setTimeout(() => { if (cer !== me) return;
+            const els = [...document.querySelectorAll("#cer .wd-duel .av")]; els.forEach((e, j) => e.classList.toggle("lit", last ? e.classList.contains("w") : j === k % els.length)); }, t);
+          while (t < 2150){ step(i++); t += gap; gap = Math.max(70, gap * .86); }
+          t = 2250; step(0, true); }
         if (!cer.winFx){ const me = cer; setTimeout(() => { if (cer === me) fireworks.intense = true; }, reduce ? 0 : DRUM_MS); }
         if (cer.trial) lsSet("sp-prova-chiusa", "1");
         else if (!cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));

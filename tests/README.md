@@ -37,7 +37,7 @@ Per ogni prova esce `OK` o `FALLITA`. Quello che ogni prova ha scritto, e le fot
 | 10 punti chiusi al primo certificato | dopo il primo certificato niente più punti; dopo la cerimonia di prova tutto bloccato |
 | 11 classifica per giornata dopo la prova | dopo la cerimonia di prova si vedono ancora tutte le giornate |
 | 12 schermi diversi | iPhone SE, iPhone 13, Pixel 7, iPad e computer: nessuna pagina più larga dello schermo |
-| 13 podio coperto | dopo il 4° posto il podio coperto, poi 3°, 2° e vincitore, con i pulsanti giusti |
+| 13 podio coperto | dopo il 4° posto il podio coperto, i tre finalisti, il 3°, il duello finale fra i due rimasti, la roulette durante il rullo, il vincitore e il podio completo, con i pulsanti giusti |
 | 14 cerimonia in diretta | la prova normale l'amico non la vede, quella in diretta sì; audio da attivare; ringraziamenti; niente scoperto davvero |
 | 15 suoni e schermo acceso | i suoni partono, lo schermo resta acceso durante la cerimonia, il pulsante 🔊 si ricorda la scelta |
 | 16 settimana finta | il pulsante crea i dati, la cerimonia ha titoli e certificati, uscendo dalla prova non resta niente |

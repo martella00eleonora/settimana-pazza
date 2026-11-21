@@ -125,7 +125,7 @@ Il 28 a mezzanotte l'admin trova **Scopri il vincitore**. Ogni suo tocco porta a
 5. **Titoli speciali**, uno alla volta, calcolati sui conteggi e non sui punti: Re dei malus, Collezionista di bonus, Il più graziato dal Jolly, Campione delle mini-sfide, Bestemmiatore ufficiale, Tenacia di ferro, Ritardatario cronico (Malus Federica), Re del social (Malus Antonio). Compaiono solo quelli che qualcuno si è guadagnato; a pari merito vanno a tutti.
 6. **I certificati**: una pagina di stacco rosso vino, poi un certificato alla volta con chi l'ha ricevuto.
 7. **La classifica finale**: pagina d'attesa con la coppa, poi dall'ultimo posto al 4°, uno alla volta.
-8. **Il podio**: tre gradini coperti dal "?". Si svelano 3° e 2° con un rullo di tamburi breve, poi il vincitore con il rullo lungo (3 secondi), il lampo, la corona, il nome dorato, coriandoli e fuochi d'artificio.
+8. **Il podio**: tre gradini coperti dal "?". Sotto compaiono i tre finalisti (si sanno già per esclusione). Si svela il 3° con un rullo di tamburi breve, poi **il duello finale**: le foto dei due rimasti una contro l'altra, «Chi vince tra … e …?». Con «Svela il vincitore» parte il rullo lungo (3 secondi) con la roulette fra le due foto, che si accendono a turno sempre più veloci e si fermano sul vincitore; poi il lampo, la corona, il nome dorato, coriandoli e fuochi d'artificio. Per ultimo «Il podio completo» con i tre sui gradini. Il duello è stato scelto dall'utente il 21/11: con l'ordine 3°→2°→1° il vincitore si capiva per esclusione prima del rullo.
 9. **Grazie a tutti!**: sfondo da tramonto estivo, le foto di tutti, e l'appuntamento alla **Summer Edition 2027**.
 10. **Chiudi e mostra la classifica**.
 

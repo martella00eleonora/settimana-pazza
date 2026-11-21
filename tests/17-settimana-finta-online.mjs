@@ -39,7 +39,8 @@ await admin.tap('#adm-fab'); await admin.tap('[data-trial="closing-live"]'); awa
 for (let i=0;i<60;i++){ const n = await admin.$('#cer:not(.winner) [data-cer="next"]'); if (!n) break; await n.evaluate(e=>e.click()); await admin.waitForTimeout(300); }
 await admin.waitForTimeout(5000);
 R.adminWin = await admin.textContent('.win-name'); R.amicoWin = await amico.textContent('.win-name').catch(()=>null);
-await admin.$eval('[data-cer="next"]', e=>e.click()); await admin.waitForTimeout(500); await admin.$eval('[data-cer="close"]', e=>e.click()); await admin.waitForTimeout(500);
+// avanti fino a «Chiudi» (dopo il vincitore: podio completo e ringraziamenti)
+for (let i=0;i<5 && !(await admin.$('[data-cer="close"]'));i++){ await admin.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await admin.waitForTimeout(400); } await admin.$eval('[data-cer="close"]', e=>e.click()); await admin.waitForTimeout(500);
 await admin.tap('#adm-fab'); await admin.tap('[data-trial=""]'); const t1 = Date.now(); while (!((await admin.textContent('.toast:last-child').catch(()=>'')) || '').includes('Prova finita') && Date.now() - t1 < 30000) await admin.waitForTimeout(200); R.secondiUscita = Math.round((Date.now() - t1) / 100) / 10; await admin.waitForTimeout(300);
 R.inDbDopo = [...rows.values()].filter(r => r.data.trial).length;
 console.log(JSON.stringify(R,null,1), errs); await b.close();
