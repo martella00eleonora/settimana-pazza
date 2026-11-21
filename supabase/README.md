@@ -32,3 +32,8 @@ In fondo al file la tabella `docs` viene aggiunta a **Realtime**, così le modif
 4. In **Authentication → Users → Add user** crea gli stessi admin con una password e "Auto Confirm User" attivo.
 5. In **Project Settings → API** copia "Project URL" e la chiave **publishable** in `js/config.js`. La chiave `service_role` non va mai nel sito.
 6. Apri l'app ed entra come admin: il database si riempie da solo con giocatori, programma e bonus e malus.
+
+## Da sapere
+
+- **Programma e bonus/malus seguono `js/dati.js`**: a ogni accesso dell'admin l'app confronta quelli del database con il file e aggiorna solo quelli diversi.
+- **`jsonb` riordina i campi**: dentro `data` i campi non restano nell'ordine in cui sono stati scritti (per esempio le regole tornano come `{"delta":…,"label":…}`). Per questo l'app, quando confronta, guarda i valori e non il testo JSON.

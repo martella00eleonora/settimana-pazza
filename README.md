@@ -1,6 +1,6 @@
 # Settimana Pazza · Winter Edition 2026
 
-Segnapunti della settimana pazza (21–27 dicembre 2026): classifica, programma per giornata, bonus e malus, Jolly presidenziale, mini-sfide, certificati e cerimonia di chiusura con i fuochi d'artificio.
+Segnapunti della settimana pazza (21–27 dicembre 2026): classifica, programma per giornata, bonus e malus, Jolly presidenziale, mini-sfide, certificati e cerimonia di chiusura con il duello finale e i fuochi d'artificio.
 
 Online su <https://martella00eleonora.github.io/settimana-pazza/>.
 
@@ -24,7 +24,7 @@ settimana-pazza/
 └── appunti/            le foto dei fogli con idee e programma (solo sul computer, non su GitHub)
 ```
 
-Per cambiare un giocatore, un'attività o un bonus/malus si tocca `js/dati.js`. I dati di partenza valgono solo alla prima apertura: dopo, l'app usa quelli salvati nel browser.
+Per cambiare un giocatore, un'attività o un bonus/malus si tocca `js/dati.js`. **Programma e bonus/malus** seguono sempre quel file: quando l'admin entra, l'app aggiorna il database (o il browser, in locale). **I giocatori** invece valgono solo alla prima apertura.
 
 ## Come farla girare
 

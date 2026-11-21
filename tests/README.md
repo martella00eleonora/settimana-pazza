@@ -72,7 +72,8 @@ Alcuni strumenti che tornano spesso:
 - **`pg.clock.install` e `pg.clock.setSystemTime`**: l'orologio finto. È il modo per provare il 27 alle 23 o la mezzanotte del 28 senza aspettare dicembre.
 - **`localStorage`**: in locale i dati stanno lì. Molte prove li scrivono direttamente (`pg.evaluate(...)`) per partire da una classifica già pronta.
 - **`e => e.click()`** invece di `pg.tap(...)`: i pulsanti che pulsano o si muovono (come "Svela il vincitore") per Playwright non sono mai "fermi", quindi si cliccano dall'interno della pagina.
-- **`#cer:not(.winner) [data-cer="next"]`**: va avanti nella cerimonia fermandosi sulla scena del vincitore, per poterla controllare.
+- **`#cer:not(.winner) [data-cer="next"]`**: va avanti nella cerimonia fermandosi sulla scena del vincitore, per poterla controllare. Per arrivare a «Chiudi» si tocca «avanti» **finché compare** il pulsante, mai un numero fisso di volte: se la cerimonia cambia, la prova regge.
+- **`pg.clock.fastForward(31000)`** (prova 22): fa passare 31 secondi in un colpo solo, con la pagina aperta, così scatta il controllo dell'ora che l'app fa ogni 30 secondi. `runFor` farebbe lo stesso secondo per secondo, ma è troppo lento per un mese intero.
 - **Il database finto** (prove 06, 14, 17): ogni telefono ha la sua pagina; `mock-supabase.js` sostituisce la libreria di Supabase e passa ogni richiesta allo script, che tiene i dati in memoria e applica le regole.
 
 **Cosa conta come fallita**: la prova si blocca (un bottone che non compare, un passo che non si riesce a fare) oppure nella pagina c'è un errore JavaScript. Il resto, cioè i valori in `R`, va letto: le prove sono nate per essere guardate insieme alle foto, non per dare solo un sì o un no.

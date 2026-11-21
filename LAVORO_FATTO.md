@@ -71,6 +71,7 @@ Ogni cartella ha un suo `README.md` che spiega i file nel dettaglio. Le prove au
 - Dal 26: classifica coperta con "??" per chi non è admin.
 
 **Programma.** Le giornate una per una, con le attività come card (titolo, dress code, note, regole a punti con chi le ha prese). Per l'admin c'è "Segna chi" su ogni regola. Le mini-sfide create al volo hanno la loro card.
+Per chi non è admin il programma si scopre **a tappe**: coperto fino al 30 novembre, dal 1° dicembre solo i titoli, dal 21 a mezzanotte descrizioni e dress code di tutti i giorni, e i punti di ogni attività il giorno stesso, dalle 6 del mattino (prima, al loro posto, c'è scritto «I punti di questa attività si scoprono il giorno stesso»).
 
 **Storico.** In cima "Ieri in breve" (riepilogo della giornata prima, con Mostra/Nascondi). Sotto, filtri a bottoni per giornata e per persona, e le voci raggruppate per giornata in un unico riquadro.
 
@@ -126,13 +127,16 @@ Il 28 a mezzanotte l'admin trova **Scopri il vincitore**. Ogni suo tocco porta a
 6. **I certificati**: una pagina di stacco rosso vino, poi un certificato alla volta con chi l'ha ricevuto.
 7. **La classifica finale**: pagina d'attesa con la coppa, poi dall'ultimo posto al 4°, uno alla volta.
 8. **Il podio**: tre gradini coperti dal "?". Sotto compaiono i tre finalisti (si sanno già per esclusione). Si svela il 3° con un rullo di tamburi breve, poi **il duello finale**: le foto dei due rimasti una contro l'altra, «Chi vince tra … e …?». Con «Svela il vincitore» partono 7 secondi di attesa «da ballottaggio TV»: le due foto si accendono a turno a ogni battito grave (da uno al secondo a un po' più veloce), sopra una nota tesa, e l'ultimo battito si ferma sul vincitore; poi il lampo, la corona, il nome dorato, coriandoli e fuochi d'artificio. Per ultimo «Il podio completo» con i tre sui gradini. Il duello è stato scelto dall'utente il 21/11: con l'ordine 3°→2°→1° il vincitore si capiva per esclusione prima del rullo.
-9. **Grazie a tutti!**: sfondo da tramonto estivo, le foto di tutti, e l'appuntamento alla **Summer Edition 2027**.
-10. **Chiudi e mostra la classifica**.
+9. **Il podio completo**: i tre sui gradini, con la fanfara.
+10. **Grazie a tutti!**: sfondo da tramonto estivo, le foto di tutti, e l'appuntamento alla **Summer Edition 2027**.
+11. **Chiudi e mostra la classifica**.
 
 Intorno alla cerimonia:
 
 - **Suoni** generati con Web Audio: bip del conto alla rovescia, campanelli, pop delle palline e dei pacchi, timbro dei certificati, rullo di tamburi, piatti, fanfara, applausi e "Jingle Bells" finale. Il pulsante 🔊 in alto a destra li toglie e li rimette. Chi guarda deve toccare una volta "Attiva l'audio", perché i telefoni non fanno partire suoni da soli.
+- **Nel duello finale** al posto del rullo c'è un battito grave che cresce, sopra una nota tesa che sale; l'ultimo battito, il più forte, si ferma sul vincitore.
 - **Schermo sempre acceso** (Wake Lock) durante la cerimonia e mentre si aspetta che inizi.
+- **La pagina sotto la cerimonia è nascosta e bloccata** (classe `cer-open` su `<html>`), con il fondo scuro.
 - **Brillantini dorati** al posto dei fuochi fino alla classifica; i fuochi partono con la classifica e sono al massimo sul vincitore.
 - Prima della classifica l'admin manda ai telefoni anche i "dati extra" (numeri, giornate, titoli, messaggio), perché gli altri non hanno i punti del 26 e del 27.
 
@@ -149,10 +153,11 @@ Ogni modifica è stata provata con **Playwright** (un browser comandato da scrip
 - quattro telefoni insieme;
 - la versione online con **due telefoni** (admin e amico) e un finto Supabase che applica le stesse regole del database vero;
 - la chiusura dei punti al primo certificato;
+- il calendario intero con la pagina **mai ricaricata**, su due telefoni (admin e amico), dal 30 novembre al 28 dicembre: programma a tappe, punti dalle 19 del 21, cambio di giornata alle 6, copertura, certificati, chiusura;
 - la cerimonia completa, con le foto di ogni pagina, guardate prima di dire che andava bene;
 - iPhone SE, iPhone 13, Pixel 7, iPad e computer: nessuna pagina più larga dello schermo.
 
-Le prove sono nella cartella [`tests/`](tests/README.md), con un README che spiega come sono scritte e come lanciarle.
+Le 22 prove sono nella cartella [`tests/`](tests/README.md), con un README che spiega come sono scritte e come lanciarle. Prima di ogni pubblicazione si lanciano tutte.
 
 ## 10. Problemi incontrati e come sono stati risolti
 
@@ -162,10 +167,14 @@ Le prove sono nella cartella [`tests/`](tests/README.md), con un README che spie
 - **Online, scrivere e cancellare tanti punti uno alla volta era lento**: con la settimana finta, se nel frattempo si usciva dalla prova, restavano dati nel database. Ora le scritture vanno a gruppi di 12 e, mentre l'app prepara la settimana, la prova è bloccata.
 - **I suoni non partono da soli sui telefoni**: i browser li permettono solo dopo un tocco, per questo c'è "Attiva l'audio".
 - **Copiare lo schema SQL dalla chat rovinava il testo** (errore di sintassi): si copia dal file su GitHub.
+- **Con la pagina aperta, le tappe nuove non scattavano** (titoli del 1° dicembre, dettagli del 21, punti alle 19 del 21): l'app ricontrolla l'ora ogni 30 secondi, ma confrontava solo le tappe vecchie (giornata, 23 del 27, mezzanotte del 28). Le prove non se n'erano accorte perché ricaricavano la pagina a ogni cambio d'ora. Trovato con la prova 22 (pagina mai ricaricata) e confermato con la controprova: senza la correzione fallisce proprio su quelle tappe. Regola: ogni nuova tappa oraria va aggiunta anche a `phase()`.
+- **Il database riordina i campi**: Supabase salva i dati come `jsonb`, che mette i campi in un ordine suo (`{"delta":…,"label":…}` invece di `{"label":…,"delta":…}`). Il confronto fra il programma del database e `js/dati.js` li vedeva sempre diversi, e a ogni accesso dell'admin riscriveva tutte le attività. Ora si confrontano solo i valori.
+- **Sull'iPhone, durante il duello, da una striscia si vedeva la pagina sotto la cerimonia**: quando la barra di Safari cambia altezza, il livello `position:fixed` per un attimo non arriva al bordo. Ora la pagina sotto si nasconde mentre la cerimonia è aperta, e lo schermo buio del rullo sborda un po' oltre i bordi.
+- **Le prove che toccavano «avanti» un numero fisso di volte** si sono rotte quando nella cerimonia è arrivata una pagina in più: ora toccano «avanti» finché compare il pulsante atteso.
 
 ## 11. Cronologia
 
-Tutto è stato costruito tra il **19 e il 20 novembre 2026**, una richiesta alla volta, guardando ogni volta le schermate.
+Tutto è stato costruito tra il **19 e il 22 novembre 2026**, una richiesta alla volta, guardando ogni volta le schermate.
 
 | Quando | Cosa |
 |---|---|
@@ -180,6 +189,8 @@ Tutto è stato costruito tra il **19 e il 20 novembre 2026**, una richiesta alla
 | 20/11 | Documentazione, pulizia del CSS (166 regole in meno, aspetto identico), prove automatiche pubblicate in `tests/` |
 | 21/11 | Bonus e malus rivisti (Bonus Andrea, Bonus Mariangela, Bonus Laura «Entusiasmo», Malus Cristiana), Malus Ele sullo stesso malus ripetuto (la ripetizione vale come Malus Ele), Jolly presidenziale automatico, nomi e testi ufficiali dei bonus e malus, foto azzurre per Andrea e Mariangela |
 | 21/11 sera | Programma aggiornato (pigiama e quiz party il 21, tradizioni al Bar Cappuccini e al Movida il 22, PowerPoint in costume il 23, shooting il 26, compleanno di Cri il 27), programma a tappe (titoli dal 1° dicembre, dettagli dal 21) e punti dal 21 alle 19 |
+| 21/11 notte | Con la pagina aperta l'app si aggiorna da sola anche alle tappe nuove (prova 22); podio con il **duello finale** (finalisti, 3°, duello, roulette lenta a tempo di battito, vincitore, podio completo) |
+| 22/11 | Punti delle attività giorno per giorno (descrizioni dal 21 per tutti); battito del duello più forte; il programma del database non si riscrive più a ogni accesso dell'admin; tolta la striscia della pagina sotto la cerimonia sull'iPhone; documenti aggiornati |
 
 La lista completa delle modifiche è nella storia dei commit del repository.
 
@@ -187,6 +198,8 @@ La lista completa delle modifiche è nella storia dei commit del repository.
 
 - Togliere dall'Area admin **Prova una giornata**, **Riempi con una settimana finta** e **Cerimonia in diretta**.
 - Controllare che nel database non siano rimasti dati di prova.
+- Consigliato: una prova della cerimonia in diretta con 2-3 telefoni veri (volume, connessione, «Attiva l'audio») e una prova del duello sull'iPhone per controllare che la striscia non ci sia più.
+- Facoltativo: la foto di Giorgio con lo sfondo colorato, da mettere in `PHOTOS_FUN`.
 
 ## 13. Come studiare il codice
 

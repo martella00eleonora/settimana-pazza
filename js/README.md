@@ -22,7 +22,7 @@ Se le prime due sono vuote, l'app lavora solo nel browser di questo dispositivo 
 
 ## dati.js
 
-I dati di partenza. Valgono solo la prima volta: dopo, l'app usa quelli salvati.
+I dati di partenza. I giocatori valgono solo la prima volta; **programma e bonus/malus** invece seguono sempre questo file: quando l'admin entra, `addMissingSeed()` in `app.js` aggiorna il database (aggiunge, cambia e toglie quello che non torna).
 
 - `PLAYERS`: i 12 nomi. Ognuno diventa `g0`, `g1`, … `g11`, in quest'ordine.
 - `ROLES`: chi è nel Direttivo (`g9` Presidente, `g10` Vicepresidente, `g2` e `g3` Assessori).
@@ -56,26 +56,27 @@ Tutto il resto, dentro una funzione che parte subito (`(function(){ ... })()`). 
 | Sezione | Cosa c'è |
 |---|---|
 | orologio | `NOW()`: l'ora dell'app (con lo spostamento della prova generale) |
-| calendario | `DAYS` (21–27), inizio e fine settimana |
+| calendario | `DAYS` (21–27), inizio e fine settimana (`START`, `END`), `PROGRAM_FROM` (1° dicembre: titoli del programma) e `POINTS_FROM` (21 alle 19: si aprono i punti) |
 | archivio locale | lo stesso `db` di `db-online.js`, ma salvato in `localStorage` |
 | stato | l'oggetto `S`: giocatori, punti, attività, scheda aperta, admin sì/no, prova in corso |
-| serata in corso | `currentDay()` (la giornata cambia alle 6), `live()`, `assignOpen()` (si possono dare punti?), `frozen()` (è tutto chiuso?), `hiddenDay()` (giornata coperta?), `allPoints()` (aggiunge i Malus Ele e i Jolly calcolati) |
+| serata in corso | `currentDay()` (la giornata cambia alle 6), `live()`, `pointsYet()` (sono già le 19 del 21?), `assignOpen()` (si possono dare punti?), `frozen()` (è tutto chiuso?), `hiddenDay()` (giornata coperta?), `allPoints()` (aggiunge i Malus Ele e i Jolly calcolati) |
 | conto alla rovescia e chiusura | la testata, le palline delle giornate, il conto verso il 21 |
 | modalità | cosa vede l'admin e cosa gli altri; l'Area admin |
 | classifica | `ranked()`, podio, card, classifica per giornata, "Ieri in breve" |
-| programma | le card delle attività e delle mini-sfide |
+| programma | le card delle attività e delle mini-sfide; `titlesOnly()` (dal 1° al 20 dicembre solo i titoli) e `rulesShown(giorno)` (i punti delle attività si vedono dal giorno stesso) |
 | storico | filtri e voci raggruppate per giornata |
 | regole | Direttivo, Jolly presidenziale, bonus e malus |
 | pannelli | i fogli che si aprono dal basso: dare punti (`openMulti`), mini-sfide, prova di una giornata (`setTrial`) |
 | certificati | consegna dei certificati e messaggio del Presidente |
 | suoni | `sfx`: suoni generati con Web Audio (oscillatori e rumore filtrato); `keepAwake()` per lo schermo acceso |
-| cerimonia | `openCeremony`, `renderCeremony` (l'elenco `pages` decide l'ordine delle pagine), fuochi d'artificio, coriandoli |
+| cerimonia | `openCeremony`, `renderCeremony` (l'elenco `pages` decide l'ordine delle pagine; `rankPages()` mette il podio: `podium` con i finalisti, `pod3`, la scena del vincitore e `podfinal`), il duello (`rivals`, la roulette sui battiti `DUEL_BEATS`), fuochi d'artificio, coriandoli |
 | effetti | scintille quando si danno i punti, conferma con doppio tocco (`armOrRun`) |
 | neve e lucine | la neve che cade |
 | eventi | tutti i clic, gestiti da pochi ascoltatori sul documento; qui ci sono anche la settimana finta (`fillTrial`) e la conferma della cerimonia in diretta (`armLive`) |
-| avvio | sceglie archivio locale o online e disegna la pagina |
+| avvio | `phase()` e il controllo ogni 30 secondi: se è scattata una tappa (giornata, programma, punti, certificati, chiusura) ridisegna la pagina; `addMissingSeed()` allinea programma e bonus/malus a `dati.js`; sceglie archivio locale o online e disegna la pagina |
 
 Due idee che tornano spesso:
 
 - **Si ridisegna tutto da capo.** Quando cambia qualcosa, `render()` riscrive l'HTML delle schede partendo dallo stato `S`. Non si modificano i singoli elementi a mano.
+- **Le tappe orarie stanno in `phase()`.** Se se ne aggiunge una nuova (un'ora in cui cambia cosa si vede o cosa si può fare), va aggiunta anche lì, altrimenti chi ha la pagina aperta non la vede finché non ricarica.
 - **Un ascoltatore solo per tanti bottoni.** I bottoni hanno attributi come `data-tab`, `data-cer`, `data-trial`; un solo `document.addEventListener("click", …)` guarda quale è stato toccato con `e.target.closest(...)`.
