@@ -74,14 +74,15 @@ Ogni cartella ha un suo `README.md` che spiega i file nel dettaglio. Le prove au
 
 **Storico.** In cima "Ieri in breve" (riepilogo della giornata prima, con Mostra/Nascondi). Sotto, filtri a bottoni per giornata e per persona, e le voci raggruppate per giornata in un unico riquadro.
 
-**Regole.** Il Direttivo (Giorgio con la corona), il Jolly presidenziale spiegato, l'elenco dei bonus e malus con la foto di chi li "possiede".
+**Regole.** Il Direttivo (Giorgio con la corona), il Premio presidenziale spiegato, l'elenco dei bonus e malus con la foto di chi li "possiede".
 
 ## 4. Le regole del gioco che l'app applica da sola
 
 - **La giornata cambia alle 6 del mattino**: alle 2 di notte si segna ancora sulla serata prima.
 - **Bonus e malus** valgono "1 volta al giorno" oppure sono "cumulabili". Su uno da una volta, il secondo tentativo dà un avviso.
-- **Malus Ele**: scatta da solo al 2° malus della giornata di una persona, una volta per giornata. Non è salvato: l'app lo calcola ogni volta dai malus (funzione `allPoints` in `js/app.js`).
-- **Jolly presidenziale**: una volta al giorno per persona. Trasforma l'ultimo malus della giornata in +1; a chi quel giorno non ha malus dà +2. Il Malus Ele già scattato resta.
+- **Malus Ele** (tenacia): se nella stessa giornata una persona prende **di nuovo lo stesso malus**, dalla seconda volta quel −1 vale come Malus Ele (es. inglesismo −1, bestemmia −1, bestemmia di nuovo: −1 di Malus Ele). È cumulabile: ogni ripetizione di ogni malus è un Malus Ele. I malus delle attività del programma e delle mini-sfide non contano. L'app lo riconosce da sola dai punti (funzione `allPoints` in `js/app.js`).
+- **Bonus e malus** stanno in `js/dati.js` e nell'app non si modificano: quando l'admin entra, l'app allinea il database a quel file (funzione `addMissingSeed`).
+- **Premio presidenziale** (prima si chiamava Jolly): si guadagna prendendo **tutti i bonus fissi** nella stessa giornata e scatta da solo, una volta al giorno: +2 se quel giorno non hai malus, altrimenti te ne toglie uno (+1). Il Malus Ele già scattato resta. Anche lui è calcolato da `allPoints`.
 - **Mini-sfide**: l'admin le crea al volo, valgono +1 o −1.
 - **26 e 27**: classifica coperta per chi guarda.
 - **Il 27 sera**: i punti si chiudono **alle 23 oppure al primo certificato consegnato**. Poi si consegnano solo i certificati (+1 ciascuno) e si scrive il messaggio del Presidente.
@@ -93,7 +94,7 @@ Si apre dal pulsante con la chiave, in alto a destra.
 
 - **Accesso**: online con email e password, in locale con un PIN.
 - **Prova una giornata**: bottoni dal 21 al 27, più "Cerimonia" ed "Esci dalla prova". I punti di prova li vede solo l'admin e si cancellano uscendo.
-- **Riempi con una settimana finta**: crea da sola una settimana di prova già giocata (bonus, malus, Jolly, mini-sfide, certificati, messaggio del Presidente) e porta la prova al 27. Ogni volta i dati sono diversi.
+- **Riempi con una settimana finta**: crea da sola una settimana di prova già giocata (bonus, malus, Premi presidenziali, mini-sfide, certificati, messaggio del Presidente) e porta la prova al 27. Ogni volta i dati sono diversi.
 - **Cerimonia**: la prova della cerimonia, solo sul telefono dell'admin.
 - **Cerimonia in diretta**: la stessa prova, ma la vedono anche gli amici con il sito aperto, con la scritta "Prova della cerimonia". Si conferma con un secondo tocco.
 - **Cancella i dati della prova generale**: compare solo se nel database sono rimasti dati vecchi prima del 21.
@@ -116,9 +117,9 @@ Il 28 a mezzanotte l'admin trova **Scopri il vincitore**. Ogni suo tocco porta a
 
 1. **3, 2, 1**: conto alla rovescia con una pallina e un anello dorato.
 2. **Chiusura ufficiale**: il proclama del Presidente (foto con corona, testo nel carattere dei titoli, firma, sigillo di ceralacca) e il resto del Direttivo.
-3. **La settimana in numeri**: sei palline appese a un filo con fiocchi e lucine, con dentro numeri che salgono da zero (bonus, malus, Malus Ele, Jolly, mini-sfide, certificati).
+3. **La settimana in numeri**: sei palline appese a un filo con fiocchi e lucine, con dentro numeri che salgono da zero (bonus, malus, Malus Ele, Premi presidenziali, mini-sfide, certificati).
 4. **Le sette giornate**: sette pacchi regalo incartati che si scartano uno alla volta; dentro c'è la data, gli eventi della giornata e quanti bonus e malus ci sono stati.
-5. **Titoli speciali**, uno alla volta, calcolati sui conteggi e non sui punti: Re dei malus, Collezionista di bonus, Il più graziato dal Jolly, Campione delle mini-sfide, Bestemmiatore ufficiale, Tenacia di ferro, Ritardatario cronico (Malus Fede), Re del social (Malus Antonio). Compaiono solo quelli che qualcuno si è guadagnato; a pari merito vanno a tutti.
+5. **Titoli speciali**, uno alla volta, calcolati sui conteggi e non sui punti: Re dei malus, Collezionista di bonus, Il più premiato dal Presidente, Campione delle mini-sfide, Bestemmiatore ufficiale, Tenacia di ferro, Ritardatario cronico (Malus Federica), Re del social (Malus Antonio). Compaiono solo quelli che qualcuno si è guadagnato; a pari merito vanno a tutti.
 6. **I certificati**: una pagina di stacco rosso vino, poi un certificato alla volta con chi l'ha ricevuto.
 7. **La classifica finale**: pagina d'attesa con la coppa, poi dall'ultimo posto al 4°, uno alla volta.
 8. **Il podio**: tre gradini coperti dal "?". Si svelano 3° e 2° con un rullo di tamburi breve, poi il vincitore con il rullo lungo (3 secondi), il lampo, la corona, il nome dorato, coriandoli e fuochi d'artificio.
@@ -174,6 +175,7 @@ Tutto è stato costruito tra il **19 e il 20 novembre 2026**, una richiesta alla
 | 20/11 notte | Pacchi regalo, pagina d'attesa della classifica, podio coperto dal 3° al 1° con rullo di tamburi |
 | 20/11 notte | Cerimonia in diretta di prova, suoni, schermo acceso, pagina dei ringraziamenti, settimana finta, foto con lo sfondo colorato |
 | 20/11 | Documentazione, pulizia del CSS (166 regole in meno, aspetto identico), prove automatiche pubblicate in `tests/` |
+| 21/11 | Bonus e malus rivisti (Bonus Andrea, Bonus Mariangela, Bonus Laura «Entusiasmo», Malus Cristiana), Malus Ele sullo stesso malus ripetuto (la ripetizione vale come Malus Ele), Premio presidenziale automatico (era il Jolly), nomi e testi ufficiali dei bonus e malus, foto azzurre per Andrea e Mariangela |
 
 La lista completa delle modifiche è nella storia dei commit del repository.
 

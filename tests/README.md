@@ -25,11 +25,11 @@ Per ogni prova esce `OK` o `FALLITA`. Quello che ogni prova ha scritto, e le fot
 
 | Prova | Cosa controlla |
 |---|---|
-| 01 settimana completa | la settimana dal 21 al 28 con un orologio finto: punti, Jolly, copertura, certificati, cerimonia, cosa vede chi guarda |
+| 01 settimana completa | la settimana dal 21 al 28 con un orologio finto: punti, Malus Ele, Premio presidenziale, copertura, certificati, cerimonia, cosa vede chi guarda |
 | 02 quattro telefoni e cambio giornata | quattro modelli di telefono; alle 5:58 è ancora la serata prima, alle 6 cambia |
 | 03 sera del 27 | alle 22:30 si danno punti, alle 23:05 solo certificati, alle 00:01 è tutto chiuso |
 | 04 copertura del 26 e 27 | chi guarda vede "??", l'admin i numeri; la prova di una giornata si cancella uscendo |
-| 05 Jolly e Malus Ele | il Malus Ele al secondo malus, il Jolly che trasforma un malus in +1, gli avvisi |
+| 05 Premio presidenziale | con tutti i bonus fissi scatta il Premio (+2, oppure toglie un malus); i malus delle attività non fanno scattare il Malus Ele |
 | 06 online, due telefoni | admin e amico con il database finto: accesso, punti in diretta, copertura, cerimonia vista dall'amico |
 | 07 Ieri in breve e dati di prova | Mostra/Nascondi del riepilogo e la pulizia dei dati della prova generale |
 | 08 cerimonia dall'ultimo al primo | i passi della classifica, il vincitore, i coriandoli, la chiusura |
@@ -43,6 +43,7 @@ Per ogni prova esce `OK` o `FALLITA`. Quello che ogni prova ha scritto, e le fot
 | 16 settimana finta | il pulsante crea i dati, la cerimonia ha titoli e certificati, uscendo dalla prova non resta niente |
 | 17 settimana finta online | lo stesso online: velocità, prova bloccata mentre prepara, database pulito dopo |
 | 18 foto con sfondo colorato | quali foto compaiono in Regole, nel Direttivo e nei ringraziamenti |
+| 19 bonus e malus nuovi e Malus Ele | entrando da admin i bonus e malus del database diventano quelli di `js/dati.js`; lo stesso malus ripetuto nella giornata vale come Malus Ele |
 
 ## Come sono scritte
 

@@ -1,6 +1,6 @@
 # Settimana Pazza · Winter Edition 2026
 
-Segnapunti della settimana pazza (21–27 dicembre 2026): classifica, programma per giornata, bonus e malus, Jolly presidenziale, mini-sfide, certificati e cerimonia di chiusura con i fuochi d'artificio.
+Segnapunti della settimana pazza (21–27 dicembre 2026): classifica, programma per giornata, bonus e malus, Premio presidenziale, mini-sfide, certificati e cerimonia di chiusura con i fuochi d'artificio.
 
 Online su <https://martella00eleonora.github.io/settimana-pazza/>.
 
@@ -16,7 +16,7 @@ settimana-pazza/
 ├── js/config.js        collegamento a Supabase (vuoto = solo questo dispositivo)
 ├── js/dati.js          dati di partenza: giocatori, programma, bonus/malus, foto dei profili
 ├── js/db-online.js     archivio online su Supabase, con aggiornamenti in diretta
-├── js/app.js           la logica: giornate, punti, Malus Ele, Jolly, copertura, cerimonia
+├── js/app.js           la logica: giornate, punti, Malus Ele, Premio presidenziale, copertura, cerimonia
 ├── supabase/schema.sql tabelle e regole di sicurezza del database online
 ├── tests/              le prove automatiche con Playwright (vedi tests/README.md)
 ├── foto/profili/       le foto dei profili già ritagliate (224×224) usate dall'app
@@ -60,8 +60,9 @@ I punti si salvano **nel browser** in cui apri il file, non nel file. Quindi:
 
 - **La giornata cambia alle 6 del mattino**: alle 2 di notte si segna ancora sulla giornata precedente.
 - **Bonus e malus**: alcuni valgono 1 volta al giorno, altri sono cumulabili. Il secondo tentativo su uno da 1 volta mostra un avviso.
-- **Malus Ele**: scatta da solo al 2° malus della giornata, una volta per giornata. Il Jolly non lo cancella.
-- **Jolly presidenziale** (Giorgio, il Presidente): una volta al giorno per persona. Trasforma l'ultimo malus della giornata in +1; a chi quel giorno non ha malus dà +2.
+- **Malus Ele** (tenacia): se nella stessa giornata una persona prende **di nuovo lo stesso malus**, dalla seconda volta quel −1 vale come Malus Ele (es. inglesismo −1, bestemmia −1, bestemmia di nuovo: −1 di Malus Ele). È cumulabile: ogni ripetizione di ogni malus è un Malus Ele. I malus delle attività del programma e delle mini-sfide non contano.
+- **Bonus e malus** si cambiano solo in `js/dati.js`: quando l'admin entra, l'app aggiorna da sola quelli del database.
+- **Premio presidenziale**: si guadagna prendendo **tutti i bonus fissi** nella stessa giornata e scatta da solo, una volta al giorno: +2 se quel giorno non hai malus, altrimenti te ne toglie uno (+1). Il Malus Ele già scattato resta. Come il Malus Ele, non è salvato: l'app lo calcola dai punti.
 - **Mini-sfide**: create al volo durante la giornata, +1 o −1, una volta al giorno per persona.
 - **26 e 27**: la classifica è coperta (??) per chi non è admin.
 - **27 sera**: i punti si chiudono alle 23 oppure al primo **certificato** consegnato; poi solo certificati (+1) e messaggio del Presidente.

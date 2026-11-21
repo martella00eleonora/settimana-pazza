@@ -32,11 +32,18 @@ const SEED = {
     premi: A("2026-12-27", 8, "Premiazione finale", "", ["Chi è in testa alla classifica vince la Settimana Pazza Winter 26/27."], [])
   },
   presets: Object.fromEntries([
-    // [nome, motivo, punti, di chi è, quante volte a serata: "once" = 1 volta, "cum" = cumulabile, "auto" = automatico]
-    ["Bonus Bardahan", "alcolico", 1, "g0", "once"], ["Bonus Coronaus", "oggi guidi tu", 1, "g3", "once"], ["Bonus Laura", "ore piccole (fine serata, min. 1)", 1, "g10", "once"],
-    ["Malus Ele", "tenacia: scatta da solo al 2° malus della giornata", -1, "g2", "auto"],
-    ["Malus Jacopo", "bestemmi", -1, "g11", "cum"], ["Malus Fede", "ritardo oltre 20 min", -1, "g7", "once"], ["Malus NMG", "inglesismi", -1, "g1", "cum"], ["Malus Antonio", "scrolli i social", -1, "g6", "cum"],
-    ["Malus Cri", "non rispondi, non proattivo", -1, "g4", "cum"], ["Malus Mary", "hai sonno, chiudi gli occhi", -1, "g5", "cum"], ["Malus Andrea", "3 capi di colore nero", -1, "g8", "once"]
+    // [nome, motivo, punti, di chi è, quante volte a serata: "once" = 1 volta, "cum" = si può ripetere (per i malus la ripetizione diventa Malus Ele), "auto" = automatico]
+    ["Bonus Bardahan", "bevi un alcolico", 1, "g0", "once"],
+    ["Bonus Coronaus", "oggi guidi tu! Valido anche per chi prende la macchina e la lascia a casa di qualcuno", 1, "g3", "once"],
+    ["Bonus Laura", "entusiasmo: ti sei fatto notare! Punto dato a maggioranza", 1, "g10", "once"],
+    ["Malus Ele", "tenacia: hai perseverato nel prendere per la seconda volta lo stesso malus nella stessa giornata. Scatta da solo ed è cumulabile: vale per ogni malus ripetuto", -1, "g2", "auto"],
+    ["Malus Jacopo", "bestemmia", -1, "g11", "cum"],
+    ["Malus Federica", "fai un ritardo superiore ai 20 minuti", -1, "g7", "cum"],
+    ["Malus Mg", "hai usato un inglesismo", -1, "g1", "cum"],
+    ["Malus Antonio", "sei stato beccato a scrollare i social (WhatsApp non conta)", -1, "g6", "cum"],
+    ["Malus Cristiana", "non rispondi ai messaggi durante l'organizzazione delle attività. Vale se vieni richiamato a rispondere due volte", -1, "g4", "cum"],
+    ["Bonus Mariangela", "hai fatto le ore piccole! Sei rimasto fino alla fine della serata. Vale solo se rientri dopo l'una di notte", 1, "g5", "once"],
+    ["Bonus Andrea", "questo giro lo offro io! Valgono alcolici e non, il cibo no. Il giro va offerto ad almeno tre persone, te compreso", 1, "g8", "once"]
   ].map(([name, short, delta, owner, kind], i) => ["p" + i, {label: name + " · " + short, short, delta, owner, once: kind === "once", auto: kind === "auto", createdAt:i}])),
   points: {}
 };
@@ -48,10 +55,10 @@ const PHOTOS = {
   "g2": "foto/profili/ele-3.jpg",
   "g3": "foto/profili/coronaus-3.jpg",
   "g4": "foto/profili/cri.jpg",
-  "g5": "foto/profili/mary.jpg",
+  "g5": "foto/profili/mary-blu.jpg",
   "g6": "foto/profili/antonio.jpg",
   "g7": "foto/profili/fede.jpg",
-  "g8": "foto/profili/andrea.jpg",
+  "g8": "foto/profili/andrea-blu.jpg",
   "g10": "foto/profili/laura-3.jpg",
   "g11": "foto/profili/jacopo.jpg",
   "g9": "foto/profili/giorgio.jpg"

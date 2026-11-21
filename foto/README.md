@@ -12,6 +12,8 @@ Sono collegate ai giocatori in `js/dati.js`:
 
 Giorgio ha una foto sola (`giorgio.jpg`).
 
+**Lo sfondo ha un significato**: azzurro per chi "possiede" un bonus, rosso per chi ha un malus. Quando Andrea e Mariangela sono passati ai bonus, lo sfondo rosso delle loro foto è stato ricolorato di azzurro (`andrea-blu.jpg`, `mary-blu.jpg`), toccando solo lo sfondo.
+
 **Per cambiare una foto**: metti il nuovo file quadrato in `profili/` e cambia il nome nella riga del giocatore in `js/dati.js`.
 
 ## originali/ (non su GitHub)

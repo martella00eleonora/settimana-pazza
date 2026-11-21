@@ -59,14 +59,14 @@ Tutto il resto, dentro una funzione che parte subito (`(function(){ ... })()`). 
 | calendario | `DAYS` (21–27), inizio e fine settimana |
 | archivio locale | lo stesso `db` di `db-online.js`, ma salvato in `localStorage` |
 | stato | l'oggetto `S`: giocatori, punti, attività, scheda aperta, admin sì/no, prova in corso |
-| serata in corso | `currentDay()` (la giornata cambia alle 6), `live()`, `assignOpen()` (si possono dare punti?), `frozen()` (è tutto chiuso?), `hiddenDay()` (giornata coperta?), `allPoints()` (aggiunge i Malus Ele calcolati) |
+| serata in corso | `currentDay()` (la giornata cambia alle 6), `live()`, `assignOpen()` (si possono dare punti?), `frozen()` (è tutto chiuso?), `hiddenDay()` (giornata coperta?), `allPoints()` (aggiunge i Malus Ele e i Premi presidenziali calcolati) |
 | conto alla rovescia e chiusura | la testata, le palline delle giornate, il conto verso il 21 |
 | modalità | cosa vede l'admin e cosa gli altri; l'Area admin |
 | classifica | `ranked()`, podio, card, classifica per giornata, "Ieri in breve" |
 | programma | le card delle attività e delle mini-sfide |
 | storico | filtri e voci raggruppate per giornata |
-| regole | Direttivo, Jolly, bonus e malus |
-| pannelli | i fogli che si aprono dal basso: dare punti (`openMulti`), Jolly, mini-sfide, prova di una giornata (`setTrial`) |
+| regole | Direttivo, Premio presidenziale, bonus e malus |
+| pannelli | i fogli che si aprono dal basso: dare punti (`openMulti`), mini-sfide, prova di una giornata (`setTrial`) |
 | certificati | consegna dei certificati e messaggio del Presidente |
 | suoni | `sfx`: suoni generati con Web Audio (oscillatori e rumore filtrato); `keepAwake()` per lo schermo acceso |
 | cerimonia | `openCeremony`, `renderCeremony` (l'elenco `pages` decide l'ordine delle pagine), fuochi d'artificio, coriandoli |
