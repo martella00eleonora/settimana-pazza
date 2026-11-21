@@ -16,7 +16,7 @@ const SEED = {
     pigiama: A("2026-12-21", 0, "Serata pigiama e quiz party", "Pigiama e pantofole", [
       "Tutti i giochi si fanno a squadre, scelte a caso.",
       "Quizzone: 10 domande di cultura generale, in busta chiusa.",
-      "Foto bendata: hai 1 minuto per fotografare più persone bendate possibile della squadra avversaria.",
+      "Foto bendata: sei tu a essere bendato, e hai 1 minuto per fotografare più persone possibile della squadra avversaria.",
       "Gioco del bicchiere.",
       "Mimo.",
       "Indovina la parola, con musica e cuffie."
