@@ -404,6 +404,8 @@
   const beforeStart = () => !S.trial && NOW() < START.getTime();
   /* per chi non è admin: programma coperto fino al 1° dicembre, poi solo i titoli fino al 21 */
   const titlesOnly = () => beforeStart() && !S.admin;
+  /* i punti delle attività si scoprono giorno per giorno (dalle 6 della giornata); l'admin li vede sempre */
+  const rulesShown = d => S.admin || d <= currentDay();
   function renderDays(){
     if (titlesOnly() && NOW() < PROGRAM_FROM.getTime()){
       $("days").innerHTML = "";
@@ -427,11 +429,12 @@
       return `<li class="act">
         <div class="act-h"><span class="act-ic" aria-hidden="true">${ICONS[a.id] || "✦"}</span><div class="act-ht"><h3>${esc(a.title)}</h3>${a.dress ? `<span class="tag dress">Dress code · ${esc(a.dress)}</span>` : ""}</div></div>
         ${(a.notes||[]).length ? `<ul class="notes">${a.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
-        ${(a.rules||[]).length ? `<div><div class="lbl">Punti della giornata</div><ul class="rlist">${a.rules.map((r,i) => `<li class="rrow ${r.delta>=0?"b":"m"}"><span class="lpt ${r.delta>=0?"b":"m"}">${sign(r.delta)}</span>
+        ${(a.rules||[]).length && !rulesShown(a.day) ? `<p class="none rules-soon">I punti di questa attività si scoprono il giorno stesso.</p>` : ""}
+        ${(a.rules||[]).length && rulesShown(a.day) ? `<div><div class="lbl">Punti della giornata</div><ul class="rlist">${a.rules.map((r,i) => `<li class="rrow ${r.delta>=0?"b":"m"}"><span class="lpt ${r.delta>=0?"b":"m"}">${sign(r.delta)}</span>
             <span class="rt"><b>${esc(r.label)}</b><span class="rwho">${whoList(takers(a.id, r.label, a.day), a.day)}</span></span>
             ${isNow ? `<button class="btn small gold admin-only" data-mark="r:${esc(a.id)}:${i}">Segna chi</button>` : lock(a.day)}</li>`).join("")}</ul></div>` : ""}
         ${a.id === "premi" ? `<div><div class="lbl">Certificati della serata</div>${certsHTML(a.day)}${certOpen() && S.day === cd ? `<button class="btn gold admin-only" data-cert="1" type="button" style="margin-top:8px">Consegna certificati</button>` : ""}</div>` : ""}
-        <div class="foot"><span>${foot}</span></div>
+        ${rulesShown(a.day) ? `<div class="foot"><span>${foot}</span></div>` : ""}
       </li>`;
     };
     const soon = titlesOnly() && acts.length ? `<p class="closed">Dress code, regole e punti si scoprono lunedì 21 dicembre.</p>` : "";
@@ -761,7 +764,7 @@
       stamp: (at = 0) => { tone(150, at, .3, "sine", .4, 60); noise(at, .12, .2, "lowpass", 900); },
       crash: (at = 0) => { noise(at, 1.8, .32, "highpass", 5000, .5); noise(at, .6, .18, "bandpass", 2500, .8); tone(80, at, .8, "sine", .4, 40); },
       drumroll: (at, dur) => { let t = 0, gap = .09; while (t < dur){ const k = t / dur; noise(at + t, .06, .08 + .22 * k, "bandpass", 1800 + 600 * k, 1.2); t += gap; gap = Math.max(.032, gap * .965); } },
-      heartbeat: (at = 0, v = 1) => { tone(62, at, .5, "sine", .55 * v, 42); tone(124, at, .14, "triangle", .07 * v); noise(at, .09, .1 * v, "lowpass", 260); },
+      heartbeat: (at = 0, v = 1) => { tone(62, at, .55, "sine", .9 * v, 42); tone(124, at, .16, "triangle", .14 * v); noise(at, .1, .2 * v, "lowpass", 300); },
       tension: (at, dur) => { tone(98, at, dur, "sawtooth", .03, 147); tone(196, at, dur, "triangle", .03, 294); tone(49, at, dur, "sine", .12, 55); },
       applause: (at, dur, vol = .5) => { for (let t = 0; t < dur; t += .012){ const k = t < .4 ? t / .4 : t > dur - 1 ? Math.max(0, dur - t) : 1; if (Math.random() < .55) noise(at + t + Math.random() * .01, .03 + Math.random() * .03, (.04 + Math.random() * .08) * k * vol, "bandpass", 1200 + Math.random() * 2400, 1.5); } },
       fanfare: (at = 0) => { [[523,0,.18],[659,.18,.18],[784,.36,.18],[1047,.54,.9]].forEach(([f, d, l]) => { tone(f, at + d, l, "sawtooth", .09); tone(f * 2, at + d, l, "triangle", .04); });
@@ -803,7 +806,7 @@
     else if (page.startsWith("pod")){ P("drumroll", 0, 1.75); P("crash", 1.75); P("applause", 1.9, 2.2, .6); }
     else if (page === "thanks"){ P("jingle", .3); P("applause", 0, 3.5, .5); }
     else if (info.winner && info.duel){ const b = DUEL_BEATS.map(x => x / 1000), end = DUEL_STOP / 1000;
-      P("tension", 0, end); b.forEach((t, i) => P("heartbeat", t, .55 + .45 * i / b.length)); P("heartbeat", end, 1.4);
+      P("tension", 0, end); b.forEach((t, i) => P("heartbeat", t, .7 + .3 * i / b.length)); P("heartbeat", end, 1.25);
       P("crash", end + .45); P("fanfare", end + .65); P("applause", end + .65, 6, 1); }
     else if (info.winner){ P("drumroll", 0, 2.9); P("crash", 2.9); P("fanfare", 3.1); P("applause", 3.1, 6, 1); }
     else P("whoosh");
@@ -1389,7 +1392,9 @@
   async function addMissingSeed(){
     if (!S.admin || !S.activities.length) return;
     /* il programma nell'app non si modifica: il database segue sempre js/dati.js (le attività tolte solo se nessun punto le usa) */
-    const sameAct = (a, b) => ["day","order","title","dress","notes","rules"].every(k => JSON.stringify(a[k] ?? null) === JSON.stringify(b[k] ?? null));
+    /* il database online può riordinare i campi delle regole: si confrontano solo i valori */
+    const actKey = a => JSON.stringify([a.day, a.order, a.title, a.dress || "", a.notes || [], (a.rules || []).map(r => [r.label, Number(r.delta)])]);
+    const sameAct = (a, b) => actKey(a) === actKey(b);
     for (const [id, v] of Object.entries(SEED.activities)){ const cur = S.activities.find(a => a.id === id); if (!cur || !sameAct(cur, v)) await write(() => db.doc("activities/" + id).set(v)); }
     for (const a of S.activities) if (!SEED.activities[a.id] && !S.points.some(e => e.activityId === a.id)) await write(() => db.doc("activities/" + a.id).delete());
     /* bonus e malus: nell'app non si modificano, quindi il database segue sempre js/dati.js */

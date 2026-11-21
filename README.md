@@ -59,7 +59,7 @@ I punti si salvano **nel browser** in cui apri il file, non nel file. Quindi:
 ## Regole che l'app applica da sola
 
 - **La giornata cambia alle 6 del mattino**: alle 2 di notte si segna ancora sulla giornata precedente.
-- **Programma a tappe**: per chi non è admin è coperto fino al 1° dicembre; dal 1° dicembre si vedono i giorni con i soli titoli delle attività; dal 21 a mezzanotte anche dress code, note e punti.
+- **Programma a tappe**: per chi non è admin è coperto fino al 1° dicembre; dal 1° dicembre si vedono i giorni con i soli titoli delle attività; dal 21 a mezzanotte anche dress code e descrizioni di tutti i giorni; i punti di ogni attività compaiono il giorno stesso (dalle 6), l'admin li vede sempre.
 - **Punti dal 21 alle 19**: prima la settimana è partita ma non si segna niente (in modalità prova invece sì).
 - **Pagina lasciata aperta**: ogni 30 secondi l'app ricontrolla l'ora e, se è scattata una tappa (giornata nuova, programma, punti, certificati, chiusura), si aggiorna da sola.
 - **Bonus e malus**: alcuni valgono 1 volta al giorno, altri sono cumulabili. Il secondo tentativo su uno da 1 volta mostra un avviso.

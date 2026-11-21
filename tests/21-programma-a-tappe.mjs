@@ -34,10 +34,18 @@ await day('2026-12-27'); await pg.screenshot({path: look+'dicembre-27.png'});
 // 21 dicembre all'una di notte: i dettagli ci sono
 await at(new Date(2026,11,21,1,0));
 await day('2026-12-21'); R.notte21 = await vista();
-check('dettagli del 21', R.notte21.note >= 7 && R.notte21.punti === 2 && R.notte21.dress === 1);
-await pg.screenshot({path: look+'21-dettagli.png', fullPage: true});
+// all'una di notte del 21 è ancora la serata del 20: descrizioni e dress code sì, punti delle attività no
+check('dettagli del 21', R.notte21.note >= 7 && R.notte21.punti === 0 && R.notte21.dress === 1 && /si scoprono il giorno stesso/.test(R.notte21.testo));
+await day('2026-12-23'); R.ppt23 = await vista(); check('PowerPoint senza punti la notte del 21', R.ppt23.note === 2 && R.ppt23.punti === 0 && R.ppt23.dress === 1);
+// 23 dicembre alle 7: i punti del 23 ci sono, quelli del 26 ancora no
+await at(new Date(2026,11,23,7,0));
+await day('2026-12-21'); R.p21 = (await vista()).punti; check('punti del 21 il 23', R.p21 === 2);
 await day('2026-12-23'); R.ppt = await pg.$$eval('#dayview .rrow b', e=>e.map(x=>x.textContent));
 check('punti del PowerPoint', JSON.stringify(R.ppt) === JSON.stringify(["Vieni in costume","Miglior PowerPoint (voto anonimo)","Peggior PowerPoint (voto anonimo)"]));
+await pg.screenshot({path: look+'23-punti.png', fullPage: true});
+await day('2026-12-26'); R.shoot23 = await vista(); check('shooting senza punti il 23', R.shoot23.punti === 0 && R.shoot23.dress === 1);
+await pg.screenshot({path: look+'26-visto-il-23.png'});
+await at(new Date(2026,11,26,7,0));
 await day('2026-12-26'); R.shoot = await pg.$$eval('#dayview .rrow b', e=>e.map(x=>x.textContent));
 check('punti dello shooting', JSON.stringify(R.shoot) === JSON.stringify(["Non sei vestito a tema"]));
 

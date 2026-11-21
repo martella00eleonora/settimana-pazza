@@ -79,7 +79,7 @@ Ogni cartella ha un suo `README.md` che spiega i file nel dettaglio. Le prove au
 ## 4. Le regole del gioco che l'app applica da sola
 
 - **La giornata cambia alle 6 del mattino**: alle 2 di notte si segna ancora sulla serata prima.
-- **Programma a tappe**: per chi non è admin è coperto fino al 1° dicembre; dal 1° dicembre si vedono i giorni con i soli titoli delle attività; dal 21 a mezzanotte anche dress code, note e punti.
+- **Programma a tappe**: per chi non è admin è coperto fino al 1° dicembre; dal 1° dicembre si vedono i giorni con i soli titoli delle attività; dal 21 a mezzanotte anche dress code e descrizioni di tutti i giorni; i punti di ogni attività compaiono il giorno stesso (dalle 6), l'admin li vede sempre.
 - **Punti dal 21 alle 19**: prima la settimana è partita ma non si segna niente (in modalità prova invece sì).
 - **Pagina lasciata aperta**: ogni 30 secondi l'app ricontrolla l'ora e, se è scattata una tappa (giornata nuova, programma, punti, certificati, chiusura), si aggiorna da sola. Prima le tappe del programma e le 19 del 21 non erano controllate: corretto il 21/11 (prova 22).
 - **Bonus e malus** valgono "1 volta al giorno" oppure sono "cumulabili". Su uno da una volta, il secondo tentativo dà un avviso.

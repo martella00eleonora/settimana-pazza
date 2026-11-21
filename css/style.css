@@ -150,6 +150,7 @@ details.add form{display:grid;gap:8px;margin-top:12px}
 .rwho{display:flex;flex-wrap:wrap;gap:5px}
 .mini{font-size:12px;font-weight:700;padding:3px 9px 3px 7px;border-radius:999px;background:color-mix(in srgb,var(--pc) 30%,transparent);border-left:3px solid var(--pc)}
 .rwho .none{font-size:13px;color:var(--faint)}
+.rules-soon{margin:0;font-size:13px;font-style:italic;color:var(--faint)}
 .chip.auto{opacity:.55;cursor:not-allowed;border:1px dashed currentColor}
 .chip.auto em{font-weight:500;font-size:12px}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
