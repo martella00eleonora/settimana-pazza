@@ -12,23 +12,25 @@ const A = (day, order, title, dress, notes, rules) => ({day, order, title, dress
 const SEED = {
   players: Object.fromEntries(PLAYERS.map((n, i) => ["g" + i, {name:n, color:i, createdAt:i, ...(ROLES["g" + i] ? {role:ROLES["g" + i]} : {})}])),
   activities: {
-    ape: A("2026-12-24", 1, "Ape + Pattinaggio", "", ["Aperitivo tutti insieme, poi sul ghiaccio."], [["Non pattini", -1], ["Pattini senza mai cadere", 1]]),
-    pigiama: A("2026-12-22", 2, "Serata pigiama e quiz party", "Pigiama e pantofole", [
-      "Super Quizzone: 10/20 domande, 2 squadre, un pulsante per prenotarsi, a tempo.",
-      "Una persona per squadra fa da giudice imparziale.",
-      "Gioco del bicchiere: 2 squadre.",
-      "Altri giochi: parole al contrario, mimo.",
-      "Alternativa sportiva invernale: Coppa Volley."
-    ], [["Non sei in pigiama", -1]]),
-    ppt: A("2026-12-23", 3, "PowerPoint Night", "Costume + serata colore", [
+    apertura: A("2026-12-21", -1, "Apertura · Serata d'inaugurazione", "", ["Si apre ufficialmente la Settimana Pazza Winter Edition 2026.", "Si scopre il mese di ognuno per lo shooting di sabato 26."], []),
+    pigiama: A("2026-12-21", 0, "Serata pigiama e quiz party", "Pigiama e pantofole", [
+      "Tutti i giochi si fanno a squadre, scelte a caso.",
+      "Quizzone: 10 domande di cultura generale, in busta chiusa.",
+      "Foto bendata: hai 1 minuto per fotografare più persone bendate possibile della squadra avversaria.",
+      "Gioco del bicchiere.",
+      "Mimo.",
+      "Indovina la parola, con musica e cuffie."
+    ], [["Non sei in pigiama", -1], ["Pigiama e pantofole", 1]]),
+    tradizioni: A("2026-12-22", 1, "Le tradizioni vanno rispettate", "", ["Ci vediamo al Capp e al Movida."], []),
+    ppt: A("2026-12-23", 2, "PowerPoint in costume", "Costume, a libera interpretazione", [
       "Tema libero: 5 minuti di presentazione e 5 di dibattito.",
       "Votazione anonima: in palio 1+1 malus o 2 bonus."
-    ], [["Miglior PowerPoint (voto anonimo)", 2], ["Peggior PowerPoint (voto anonimo)", -2]]),
+    ], [["Vieni in costume", 1], ["Miglior PowerPoint (voto anonimo)", 2], ["Peggior PowerPoint (voto anonimo)", -2]]),
+    ape: A("2026-12-24", 3, "Ape + Pattinaggio", "", ["Aperitivo tutti insieme, poi sul ghiaccio."], [["Non pattini", -1], ["Pattini senza mai cadere", 1]]),
     santa: A("2026-12-25", 4, "Secret Santa", "", ["Ognuno fa un regalo a un amico estratto a sorte."], []),
     tombola: A("2026-12-25", 5, "Tombolone", "", ["Massimo 3 partite.", "Premi casuali: un regalo a testa, portato o fatto a mano."], [["Tombola", 1]]),
-    apertura: A("2026-12-21", -1, "Apertura · Serata d'inaugurazione", "", ["Si apre ufficialmente la Settimana Pazza Winter Edition 2026."], []),
-    shooting: A("2026-12-21", 0, "Shooting calendario", "Natalizio: maglioni, sciarpa, berretto, dolce vita", ["Una persona per ogni mese.", "Set natalizio, ignorante all'80%."], []),
-    festa: A("2026-12-26", 7, "Festa nazionale: compleanno di Cri", "", ["La ricorrenza dell'anno: si festeggia Cri."], []),
+    shooting: A("2026-12-26", 6, "Giornata shooting", "A tema con il tuo mese: outfit e oggettistica varia", ["Una persona per ogni mese: il mese si scopre all'inaugurazione."], [["Non sei vestito a tema", -1]]),
+    festa: A("2026-12-27", 7, "Festa nazionale: si torna nel 2008", "", ["Auguri Cristiana per i tuoi 8 anni!"], []),
     premi: A("2026-12-27", 8, "Premiazione finale", "", ["Chi è in testa alla classifica vince la Settimana Pazza Winter 26/27."], [])
   },
   presets: Object.fromEntries([

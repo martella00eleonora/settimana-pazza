@@ -79,9 +79,11 @@ Ogni cartella ha un suo `README.md` che spiega i file nel dettaglio. Le prove au
 ## 4. Le regole del gioco che l'app applica da sola
 
 - **La giornata cambia alle 6 del mattino**: alle 2 di notte si segna ancora sulla serata prima.
+- **Programma a tappe**: per chi non è admin è coperto fino al 1° dicembre; dal 1° dicembre si vedono i giorni con i soli titoli delle attività; dal 21 a mezzanotte anche dress code, note e punti.
+- **Punti dal 21 alle 19**: prima la settimana è partita ma non si segna niente (in modalità prova invece sì).
 - **Bonus e malus** valgono "1 volta al giorno" oppure sono "cumulabili". Su uno da una volta, il secondo tentativo dà un avviso.
 - **Malus Ele** (tenacia): se nella stessa giornata una persona prende **di nuovo lo stesso malus**, dalla seconda volta quel −1 vale come Malus Ele (es. inglesismo −1, bestemmia −1, bestemmia di nuovo: −1 di Malus Ele). È cumulabile: ogni ripetizione di ogni malus è un Malus Ele. I malus delle attività del programma e delle mini-sfide non contano. Ogni malus si assegna al massimo 2 volte al giorno (la seconda è il Malus Ele), il Malus Federica una sola volta. L'app lo riconosce da sola dai punti (funzione `allPoints` in `js/app.js`).
-- **Bonus e malus** stanno in `js/dati.js` e nell'app non si modificano: quando l'admin entra, l'app allinea il database a quel file (funzione `addMissingSeed`).
+- **Bonus, malus e programma** stanno in `js/dati.js` e nell'app non si modificano: quando l'admin entra, l'app allinea il database a quel file (funzione `addMissingSeed`).
 - **Jolly presidenziale**: si guadagna prendendo **tutti i bonus fissi** nella stessa giornata e scatta da solo, una volta al giorno. Si decide quando scatta: +2 se fino a quel momento non hai malus, altrimenti te ne toglie uno (+1). I malus che arrivano dopo valgono −1 come sempre. Non è salvato: l'app lo calcola dai punti.
 - **Mini-sfide**: l'admin le crea al volo, valgono +1 o −1.
 - **26 e 27**: classifica coperta per chi guarda.
@@ -176,6 +178,7 @@ Tutto è stato costruito tra il **19 e il 20 novembre 2026**, una richiesta alla
 | 20/11 notte | Cerimonia in diretta di prova, suoni, schermo acceso, pagina dei ringraziamenti, settimana finta, foto con lo sfondo colorato |
 | 20/11 | Documentazione, pulizia del CSS (166 regole in meno, aspetto identico), prove automatiche pubblicate in `tests/` |
 | 21/11 | Bonus e malus rivisti (Bonus Andrea, Bonus Mariangela, Bonus Laura «Entusiasmo», Malus Cristiana), Malus Ele sullo stesso malus ripetuto (la ripetizione vale come Malus Ele), Jolly presidenziale automatico, nomi e testi ufficiali dei bonus e malus, foto azzurre per Andrea e Mariangela |
+| 21/11 sera | Programma aggiornato (pigiama e quiz party il 21, tradizioni al Capp e al Movida il 22, PowerPoint in costume il 23, shooting il 26, compleanno di Cri il 27), programma a tappe (titoli dal 1° dicembre, dettagli dal 21) e punti dal 21 alle 19 |
 
 La lista completa delle modifiche è nella storia dei commit del repository.
 

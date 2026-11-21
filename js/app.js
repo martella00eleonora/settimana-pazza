@@ -15,8 +15,11 @@
 
   /* ---------- calendario ---------- */
   const DAYS = ["2026-12-21","2026-12-22","2026-12-23","2026-12-24","2026-12-25","2026-12-26","2026-12-27"];
-  const DAYNAME = {"2026-12-21":"Si parte","2026-12-24":"Vigilia","2026-12-25":"Natale","2026-12-26":"Festa nazionale","2026-12-27":"Gran finale"};
+  const DAYNAME = {"2026-12-21":"Si parte","2026-12-24":"Vigilia","2026-12-25":"Natale","2026-12-26":"Tutti in posa","2026-12-27":"Gran finale"};
   const START = new Date(2026, 11, 21, 0, 0, 0), END = new Date(2026, 11, 28, 0, 0, 0);
+  /* il programma: coperto fino al 1° dicembre, poi solo i titoli, i dettagli dal 21 a mezzanotte (START).
+     I punti si segnano dal 21 alle 19. */
+  const PROGRAM_FROM = new Date(2026, 11, 1, 0, 0, 0), POINTS_FROM = new Date(2026, 11, 21, 19, 0, 0);
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   const dt = s => new Date(s + "T12:00:00");
   const wdShort = s => new Intl.DateTimeFormat("it-IT", {weekday:"short"}).format(dt(s)).replace(".", "");
@@ -34,7 +37,8 @@
     for (const pl of Object.values(data.players || {})) if (RENAME[pl.name]) pl.name = RENAME[pl.name];
     // il Direttivo
     for (const [id, r] of Object.entries(ROLES)) if (data.players?.[id] && !data.players[id].role) data.players[id].role = r;
-    if (data.activities?.festa) data.activities.festa = {...data.activities.festa, title:SEED.activities.festa.title, notes:SEED.activities.festa.notes};
+    // il programma non si modifica nell'app: segue sempre js/dati.js
+    data.activities = JSON.parse(JSON.stringify(SEED.activities));
     const subs = {};
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(_){ storageOK = false; } };
     save();
@@ -82,7 +86,9 @@
   const certHour = () => !S.trial && NOW() >= CERT_FROM.getTime();
   /* il 27 i punti si chiudono alle 23 oppure appena si consegna il primo certificato */
   const certsStarted = () => certsOf(CERT_DAY).some(c => !!c.trial === !!S.trial);
-  const assignOpen = () => live() && !certHour() && !(currentDay() === CERT_DAY && certsStarted());
+  /* prima delle 19 del 21 la settimana è partita ma i punti non si segnano ancora (in prova sì) */
+  const pointsYet = () => !!S.trial || NOW() >= POINTS_FROM.getTime();
+  const assignOpen = () => live() && pointsYet() && !certHour() && !(currentDay() === CERT_DAY && certsStarted());
   const frozen = () => revealed() || NOW() >= END.getTime() || trialDone();   // dopo mezzanotte, e dopo la cerimonia, si può solo guardare
   const certOpen = () => live() && currentDay() === CERT_DAY && (S.trial || certHour());
   const dayOf = e => e.day || serataOf(e.at || 0);
@@ -259,9 +265,10 @@
     $("multi-btn").disabled = !assignOpen();
     renderDirettivo();
     $("hint-board").textContent = !S.admin ? (beforeStart() ? "La Settimana Pazza si apre lunedì 21 dicembre: da lì parte la classifica." : hidden() ? "Tocca un nome per vedere i bonus e malus presi fino al 25." : "Tocca un nome per vedere i bonus e malus che ha preso.")
+      : live() && !pointsYet() ? "La Settimana Pazza è partita: le assegnazioni si aprono stasera alle 19."
       : live() && !assignOpen() ? "Consegna dei certificati in corso: i punti sono chiusi. A mezzanotte la chiusura ufficiale."
       : live() ? `Giornata in corso: ${dayLabel(currentDay())}. Tocca un nome o assegna a più persone insieme.${covered() ? " La classifica è coperta: i punti li vedi solo tu." : ""}`
-      : new Date(NOW()) < START ? "Le assegnazioni si aprono lunedì 21 dicembre." : "La settimana è finita: le assegnazioni sono chiuse.";
+      : new Date(NOW()) < START ? "Le assegnazioni si aprono lunedì 21 dicembre alle 19." : "La settimana è finita: le assegnazioni sono chiuse.";
   }
 
   /* ---------- classifica ---------- */
@@ -391,14 +398,16 @@
   }
 
   /* ---------- programma ---------- */
-  const ICONS = {apertura:"🥂", shooting:"📸", pigiama:"🧦", ppt:"📊", ape:"⛸️", santa:"🎁", tombola:"🎲", festa:"🎂", premi:"🏆"};
+  const ICONS = {apertura:"🥂", shooting:"📸", pigiama:"🧦", ppt:"📊", tradizioni:"🍻", ape:"⛸️", santa:"🎁", tombola:"🎲", festa:"🎂", premi:"🏆"};
   const whoList = (who, day) => hiddenDay(day) ? `<span class="none">?? · si scopre il 28</span>`
     : who.length ? who.map(p => `<span class="mini" style="--pc:${colorOf(p)}" title="${esc(p.name)}">${esc(p.name)}</span>`).join("") : `<span class="none">Ancora nessuno</span>`;
   const beforeStart = () => !S.trial && NOW() < START.getTime();
+  /* per chi non è admin: programma coperto fino al 1° dicembre, poi solo i titoli fino al 21 */
+  const titlesOnly = () => beforeStart() && !S.admin;
   function renderDays(){
-    if (beforeStart() && !S.admin){
+    if (titlesOnly() && NOW() < PROGRAM_FROM.getTime()){
       $("days").innerHTML = "";
-      $("dayview").innerHTML = `<div class="covered"><div class="q" aria-hidden="true">?</div><b>Il programma è una sorpresa</b><p>Si svela lunedì 21 dicembre, quando si apre la Settimana Pazza.</p></div>`;
+      $("dayview").innerHTML = `<div class="covered"><div class="q" aria-hidden="true">?</div><b>Il programma è una sorpresa</b><p>Si svela martedì 1° dicembre. I dettagli di ogni giornata arrivano lunedì 21.</p></div>`;
       return;
     }
     const cd = currentDay(), isLive = live();
@@ -407,8 +416,9 @@
       <span class="wd">${esc(wdShort(d))}</span><span class="dn">${dt(d).getDate()}</span><span class="dots">${actsOf(d).map(() => "<i></i>").join("")}</span></button>`).join("");
     const acts = actsOf(S.day), isNow = assignOpen() && S.day === cd;
     const head = `<div class="dayhead"><span class="big">${dt(S.day).getDate()}</span><div><div class="t1">${esc(wdLong(S.day))}</div>${DAYNAME[S.day] ? `<div class="t2">${esc(DAYNAME[S.day])}</div>` : ""}</div></div>`;
-    const lock = d => `<span class="locked admin-only">${isLive && d < cd ? "Giornata chiusa" : isLive && d === cd ? "Dalle 23 solo certificati" : "Si segna durante la giornata"}</span>`;
+    const lock = d => `<span class="locked admin-only">${isLive && d < cd ? "Giornata chiusa" : isLive && d === cd && !pointsYet() ? "Si segna dalle 19" : isLive && d === cd ? "Dalle 23 solo certificati" : "Si segna durante la giornata"}</span>`;
     const card = a => {
+      if (titlesOnly()) return `<li class="act"><div class="act-h"><span class="act-ic" aria-hidden="true">${ICONS[a.id] || "✦"}</span><div class="act-ht"><h3>${esc(a.title)}</h3></div></div></li>`;
       const sums = {};
       for (const e of allPoints()) if (e.activityId === a.id && player(e.playerId)) sums[e.playerId] = (sums[e.playerId]||0) + (Number(e.delta)||0);
       const best = Object.entries(sums).sort((x,y) => y[1]-x[1])[0];
@@ -424,7 +434,8 @@
         <div class="foot"><span>${foot}</span></div>
       </li>`;
     };
-    const body = acts.length ? `<ul class="acts">${acts.map(card).join("")}</ul>`
+    const soon = titlesOnly() && acts.length ? `<p class="closed">Dress code, regole e punti si scoprono lunedì 21 dicembre.</p>` : "";
+    const body = acts.length ? `${soon}<ul class="acts">${acts.map(card).join("")}</ul>`
       : `<div class="free"><b>Giornata libera</b>Niente in programma, per ora.</div>`;
     const ex = extrasOf(S.day);
     const minis = ex.length ? `<div class="act minis"><div class="act-h"><span class="act-ic" aria-hidden="true">⚡</span><div class="act-ht"><h3>Mini-sfide</h3><span class="tag">create al volo durante la giornata</span></div></div><ul class="rlist">${ex.map(x => `<li class="rrow ${x.delta>=0?"b":"m"}"><span class="lpt ${x.delta>=0?"b":"m"}">${sign(x.delta)}</span>
@@ -534,7 +545,7 @@
     ${p.role === "Presidente" ? `<div class="mine-card j"><span class="pill jp">J</span><span>Il Jolly presidenziale porta il suo nome</span></div>`
       : m ? `<div class="mine-card ${m.delta>=0?"b":"m"}"><span class="pill ${m.delta>=0?"b":"m"}">${sign(m.delta)}</span><span>Il suo ${m.delta>=0?"bonus":"malus"}: ${esc(m.label)}</span></div>` : ""}`; };
   const serataPill = () => `<div class="serata"><span class="dot"></span>Oggi · <b>${esc(dayLabel(currentDay()))}</b>${S.trial ? " · prova" : ""}</div>`;
-  const closedNote = () => `<p class="closed">${new Date(NOW()) < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre." : live() ? "Consegna dei certificati in corso: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
+  const closedNote = () => `<p class="closed">${new Date(NOW()) < START && !S.trial ? "Le assegnazioni si aprono lunedì 21 dicembre alle 19." : live() && !pointsYet() ? "Le assegnazioni si aprono stasera alle 19." : live() ? "Consegna dei certificati in corso: i punti sono chiusi, ora si consegnano solo i certificati (pulsante «Consegna certificati»)." : "Le assegnazioni sono chiuse."}</p>`;
 
   /* chip di un bonus/malus: disattivato se automatico o se è da 1 volta e la persona l'ha già preso stasera */
   function itemChip(it, attr, pid){
@@ -1338,10 +1349,13 @@
     for (const e of S.points.filter(x => x.trial)) await write(() => db.doc("points/" + e.id).delete());
     for (const x of S.extras.filter(x => x.trial)) await write(() => db.doc("extras/" + x.id).delete());
   }
-  /* attività aggiunte ai dati di partenza dopo il primo caricamento: l'admin le porta nel database */
+  /* programma e bonus/malus: l'admin, quando entra, allinea il database a js/dati.js */
   async function addMissingSeed(){
     if (!S.admin || !S.activities.length) return;
-    for (const [id, v] of Object.entries(SEED.activities)) if (!S.activities.some(a => a.id === id)) await write(() => db.doc("activities/" + id).set(v));
+    /* il programma nell'app non si modifica: il database segue sempre js/dati.js (le attività tolte solo se nessun punto le usa) */
+    const sameAct = (a, b) => ["day","order","title","dress","notes","rules"].every(k => JSON.stringify(a[k] ?? null) === JSON.stringify(b[k] ?? null));
+    for (const [id, v] of Object.entries(SEED.activities)){ const cur = S.activities.find(a => a.id === id); if (!cur || !sameAct(cur, v)) await write(() => db.doc("activities/" + id).set(v)); }
+    for (const a of S.activities) if (!SEED.activities[a.id] && !S.points.some(e => e.activityId === a.id)) await write(() => db.doc("activities/" + a.id).delete());
     /* bonus e malus: nell'app non si modificano, quindi il database segue sempre js/dati.js */
     const same = (a, b) => ["label","short","desc","delta","owner","once","auto"].every(k => (a[k] ?? null) === (b[k] ?? null));
     for (const [id, v] of Object.entries(SEED.presets)){ const cur = S.presets.find(p => p.id === id); if (!cur || !same(cur, v)) await write(() => db.doc("presets/" + id).set(v)); }
