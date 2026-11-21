@@ -16,7 +16,7 @@ while (await pg.$('#cer:not(.winner) [data-cer="next"]')){ await pg.$eval('#cer:
   if (!R.first && await pg.$('.place.now')) { await pg.waitForTimeout(800); await pg.screenshot({path:'look/d-cer1.png'}); R.first = (await pg.textContent('.place.now')).replace(/\s+/g,' '); }
   if (!R.btn8 && (await pg.textContent('[data-cer="next"]').catch(()=>'')).includes('2° posto')) { await pg.waitForTimeout(800); await pg.screenshot({path:'look/d-cer8.png'}); R.btn8 = await pg.textContent('[data-cer="next"]').catch(()=>null); }
 }
-R.steps = steps; await pg.waitForTimeout(500); await pg.screenshot({path:'look/d-win0.png'}); await pg.waitForTimeout(3500); await pg.screenshot({path:'look/d-win.png'});
+R.steps = steps; await pg.waitForTimeout(500); await pg.screenshot({path:'look/d-win0.png'}); await pg.waitForTimeout(7500); await pg.screenshot({path:'look/d-win.png'});
 R.winner = await pg.textContent('.win-name'); R.conf = await pg.$$eval('.conf', e=>e.length);
 await pg.evaluate(()=>document.querySelector('#cer').scrollTo(0,9999)); await pg.waitForTimeout(300); await pg.screenshot({path:'look/d-win2.png'});
 await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300); R.closed = !(await pg.$('#cer'));

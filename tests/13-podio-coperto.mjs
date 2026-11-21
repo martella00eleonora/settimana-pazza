@@ -13,9 +13,9 @@ for (let i=0;i<40;i++){ const n = await pg.$('#cer:not(.winner) [data-cer="next"
   if (t === 'Il podio'){ await pg.waitForTimeout(900); await pg.screenshot({path:'look/i-pod0.png'}); }
   if (t === 'Svela il 3° posto'){ await pg.waitForTimeout(900); await pg.screenshot({path:'look/i-drum3.png'}); await pg.waitForTimeout(2600); await pg.screenshot({path:'look/i-pod3.png'});
     R.duel = await pg.$$eval('.duel .dp b', e=>e.map(x=>x.textContent)); R.duelText = await pg.textContent('.su-t'); }
-  if (t === 'Svela il vincitore'){ await pg.waitForTimeout(1000); await pg.screenshot({path:'look/i-roulette.png'}); R.roulette = await pg.$$eval('.wd-duel .av', e=>e.length); }
+  if (t === 'Svela il vincitore'){ await pg.waitForTimeout(1700); await pg.screenshot({path:'look/i-roulette.png'}); R.roulette = await pg.$$eval('.wd-duel .av', e=>e.length); }
 }
-await pg.waitForTimeout(6000); R.winner = await pg.textContent('.win-name'); await pg.screenshot({path:'look/i-win.png'});
+await pg.waitForTimeout(10000); R.winner = await pg.textContent('.win-name'); await pg.screenshot({path:'look/i-win.png'});
 // dopo il duello e il vincitore, il podio completo
 R.afterWin = await pg.textContent('#cer.winner [data-cer="next"]');
 await pg.$eval('[data-cer="next"]', e=>e.click()); await pg.waitForTimeout(2500); await pg.screenshot({path:'look/i-podfinal.png'});

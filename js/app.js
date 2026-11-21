@@ -761,6 +761,8 @@
       stamp: (at = 0) => { tone(150, at, .3, "sine", .4, 60); noise(at, .12, .2, "lowpass", 900); },
       crash: (at = 0) => { noise(at, 1.8, .32, "highpass", 5000, .5); noise(at, .6, .18, "bandpass", 2500, .8); tone(80, at, .8, "sine", .4, 40); },
       drumroll: (at, dur) => { let t = 0, gap = .09; while (t < dur){ const k = t / dur; noise(at + t, .06, .08 + .22 * k, "bandpass", 1800 + 600 * k, 1.2); t += gap; gap = Math.max(.032, gap * .965); } },
+      heartbeat: (at = 0, v = 1) => { tone(62, at, .5, "sine", .55 * v, 42); tone(124, at, .14, "triangle", .07 * v); noise(at, .09, .1 * v, "lowpass", 260); },
+      tension: (at, dur) => { tone(98, at, dur, "sawtooth", .03, 147); tone(196, at, dur, "triangle", .03, 294); tone(49, at, dur, "sine", .12, 55); },
       applause: (at, dur, vol = .5) => { for (let t = 0; t < dur; t += .012){ const k = t < .4 ? t / .4 : t > dur - 1 ? Math.max(0, dur - t) : 1; if (Math.random() < .55) noise(at + t + Math.random() * .01, .03 + Math.random() * .03, (.04 + Math.random() * .08) * k * vol, "bandpass", 1200 + Math.random() * 2400, 1.5); } },
       fanfare: (at = 0) => { [[523,0,.18],[659,.18,.18],[784,.36,.18],[1047,.54,.9]].forEach(([f, d, l]) => { tone(f, at + d, l, "sawtooth", .09); tone(f * 2, at + d, l, "triangle", .04); });
         [523, 659, 784].forEach(f => tone(f, at + .54, 1.2, "sawtooth", .05)); },
@@ -800,6 +802,9 @@
     else if (page === "podfinal"){ P("chime"); P("fanfare", .3); P("applause", .4, 2.5, .7); }
     else if (page.startsWith("pod")){ P("drumroll", 0, 1.75); P("crash", 1.75); P("applause", 1.9, 2.2, .6); }
     else if (page === "thanks"){ P("jingle", .3); P("applause", 0, 3.5, .5); }
+    else if (info.winner && info.duel){ const b = DUEL_BEATS.map(x => x / 1000), end = DUEL_STOP / 1000;
+      P("tension", 0, end); b.forEach((t, i) => P("heartbeat", t, .55 + .45 * i / b.length)); P("heartbeat", end, 1.4);
+      P("crash", end + .45); P("fanfare", end + .65); P("applause", end + .65, 6, 1); }
     else if (info.winner){ P("drumroll", 0, 2.9); P("crash", 2.9); P("fanfare", 3.1); P("applause", 3.1, 6, 1); }
     else P("whoosh");
   }
@@ -1046,12 +1051,11 @@
           <div class="win-after">${doneList(before)}
           ${goNext()}</div>`;
         if (roulette && !reduce && cer.rlPage !== page){ cer.rlPage = page; const me = cer;
-          /* le foto si accendono a turno, sempre più veloci, e si fermano sul vincitore poco prima del lampo */
-          let t = 0, gap = 360, i = 0; const step = (k, last) => setTimeout(() => { if (cer !== me) return;
+          /* le foto si accendono a turno a ogni battito e si fermano sul vincitore */
+          const step = (k, t, last) => setTimeout(() => { if (cer !== me) return;
             const els = [...document.querySelectorAll("#cer .wd-duel .av")]; els.forEach((e, j) => e.classList.toggle("lit", last ? e.classList.contains("w") : j === k % els.length)); }, t);
-          while (t < 2150){ step(i++); t += gap; gap = Math.max(70, gap * .86); }
-          t = 2250; step(0, true); }
-        if (!cer.winFx){ const me = cer; setTimeout(() => { if (cer === me) fireworks.intense = true; }, reduce ? 0 : DRUM_MS); }
+          DUEL_BEATS.forEach((t, i) => step(i, t)); step(0, DUEL_STOP, true); }
+        if (!cer.winFx){ const me = cer; setTimeout(() => { if (cer === me) fireworks.intense = true; }, reduce ? 0 : roulette ? DUEL_MS : DRUM_MS); }
         if (cer.trial) lsSet("sp-prova-chiusa", "1");
         else if (!cer.remote && !revealed()) write(() => db.doc("settings/main").set({revealed:true, revealedAt:NOW()}));
       }
@@ -1065,10 +1069,11 @@
     $("cer").classList.toggle("rankmode", page === "rank-intro" || page.startsWith("pod"));
     $("cer").classList.toggle("thanks", page === "thanks");
     $("cer").classList.toggle("winner", page === "rank" + order.length && order[order.length - 1] === 1);
+    $("cer").classList.toggle("duel", page === "rank" + order.length && order[order.length - 1] === 1 && rivals.length > 1 && order.includes(2));
     $("cer").scrollTop = 0;
-    if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; const me = cer; setTimeout(() => { if (cer === me) confetti(); }, reduce ? 0 : DRUM_MS); }
+    if ($("cer").classList.contains("winner") && !cer.winFx){ cer.winFx = true; const me = cer; setTimeout(() => { if (cer === me) confetti(); }, reduce ? 0 : $("cer").classList.contains("duel") ? DUEL_MS : DRUM_MS); }
     countUp(); audioBtn();
-    if (cer.sfxPage !== page){ cer.sfxPage = page; ceremonySound(page, {stats:(X.stats || []).length, days:(X.days || []).length, winner:$("cer").classList.contains("winner")}); }
+    if (cer.sfxPage !== page){ cer.sfxPage = page; ceremonySound(page, {stats:(X.stats || []).length, days:(X.days || []).length, winner:$("cer").classList.contains("winner"), duel:$("cer").classList.contains("duel")}); }
   }
   /* i numeri della settimana salgono da zero, uno dopo l'altro */
   function countUp(){
@@ -1093,6 +1098,10 @@
   }
   const fireworks = {intense:false};
   const DRUM_MS = 3000;   // il rullo di tamburi prima del nome del vincitore
+  /* duello finale, con il ritmo lento dei ballottaggi in TV: le foto si accendono a turno a ogni battito,
+     sempre un po' più veloci, poi l'ultimo battito si ferma sul vincitore; lampo e scena 7 secondi dopo il tocco */
+  const DUEL_BEATS = (() => { const out = []; let t = 500, gap = 1000; while (t < 5500){ out.push(Math.round(t)); t += gap; gap = Math.max(400, gap * .87); } return out; })();
+  const DUEL_STOP = 6100, DUEL_MS = 7000;
   function startFireworks(){
     const c = $("fw"), ctx = c.getContext("2d"); let W, H; const parts = [];
     const size = () => { const dpr = Math.min(devicePixelRatio || 1, 2); W = c.offsetWidth; H = c.offsetHeight; c.width = W*dpr; c.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };

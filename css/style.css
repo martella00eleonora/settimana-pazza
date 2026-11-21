@@ -891,6 +891,19 @@ section.view > *{min-width:0}
   .duel .dp:last-child{animation:duelR .8s .3s cubic-bezier(.2,1.4,.4,1) both}
   .duel .vs{animation:winPop .7s .9s cubic-bezier(.2,1.5,.4,1) both}
 }
+/* duello: il rullo dura 7 secondi invece di 3, quindi tutta la scena del vincitore parte 4 secondi dopo */
+@media (prefers-reduced-motion:no-preference){
+  .cer.duel .win-drum{animation:drumOut .5s 6.6s ease-in forwards}
+  .cer.duel .win-drum::after{animation:drumFlash .7s 6.5s ease-out forwards}
+  .wd-duel .av{transition:opacity .25s,transform .25s,box-shadow .25s}
+  .cer.duel.winner .rays{animation:fadeUp .6s 6.9s both,spin 18s 6.9s linear infinite}
+  .cer.duel.winner .win-kicker{animation:fadeUp .7s 7s both}
+  .cer.duel.winner .win-p .av.xl{animation:winPop 1.1s 7.2s cubic-bezier(.2,1.5,.4,1) both}
+  .cer.duel.winner .win-p .crown{animation:crownDrop .9s 8s cubic-bezier(.3,1.6,.5,1) both}
+  .cer.duel.winner .win-name{animation:nameIn .9s 8.2s cubic-bezier(.2,1.3,.4,1) both,glowName 2.4s 9.1s ease-in-out infinite}
+  .cer.duel.winner .win-pt{animation:fadeUp .6s 8.8s both}
+  .cer.duel.winner .win-after{animation:fadeUp .8s 9.4s both}
+}
 @keyframes duelL{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
 @keyframes duelR{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
 /* --- scena del vincitore: rullo di tamburi prima del nome (3 s) --- */
