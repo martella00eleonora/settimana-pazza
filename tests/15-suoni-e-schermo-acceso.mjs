@@ -10,13 +10,14 @@ await pg.evaluate(k=>{const d=JSON.parse(localStorage.getItem(k)); let n=0; cons
  for (const [pid,v] of Object.entries(sc)) d.points['x'+(n++)]={playerId:pid,delta:v,reason:'Prova',activityId:'',day:'2026-12-22',at:1}; localStorage.setItem(k,JSON.stringify(d));},K); await pg.reload(); await pg.waitForTimeout(300);
 await pg.tap('#adm-fab'); await pg.fill('#in-pin','1234'); await pg.tap('#pin-go'); await pg.waitForTimeout(300);
 await pg.tap('#adm-fab'); await pg.waitForTimeout(300); await pg.tap('[data-trial="closing"]'); await pg.waitForTimeout(3600);
-R.wakeOn = await pg.evaluate(()=>window.__wake); R.audioBtn = await pg.textContent('#cer-audio');
+R.wakeOn = await pg.evaluate(()=>window.__wake); R.pageHidden = await pg.evaluate(()=>document.documentElement.classList.contains('cer-open') && getComputedStyle(document.querySelector('header, main, .wrap, body > :not(.cer)')).visibility === 'hidden'); R.audioBtn = await pg.textContent('#cer-audio');
 const s0 = await pg.evaluate(()=>window.__snd);
 for (let i=0;i<60 && !(await pg.$('.ty-stage'));i++){ const n = await pg.$('[data-cer="next"]'); if (!n) break; await n.evaluate(e=>e.click()); await pg.waitForTimeout(150); }
 R.sounds = (await pg.evaluate(()=>window.__snd)) - s0;
 await pg.waitForTimeout(3800); await pg.screenshot({path:'look/k-thanks.png'});
 await pg.evaluate(()=>document.querySelector('#cer').scrollTo(0,9999)); await pg.waitForTimeout(300); await pg.screenshot({path:'look/k-thanks2.png'});
 await pg.tap('#cer-audio'); await pg.waitForTimeout(200); R.muted = await pg.evaluate(()=>localStorage.getItem('sp-audio'));
-await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300); R.closed = !(await pg.$('#cer')); R.wakeOff = await pg.evaluate(()=>window.__wake);
+await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="next"]', e=>e.click()).catch(()=>{}); await pg.waitForTimeout(300); await pg.$eval('[data-cer="close"]', e=>e.click()); await pg.waitForTimeout(300); R.closed = !(await pg.$('#cer')); R.wakeOff = await pg.evaluate(()=>window.__wake); R.pageBack = await pg.evaluate(()=>!document.documentElement.classList.contains('cer-open'));
+if (!R.pageHidden || !R.pageBack) errs.push('la pagina sotto la cerimonia non si nasconde o non torna');
 console.log(JSON.stringify(R), errs); await b.close();
 if (errs.length) process.exitCode = 1;   // errori JavaScript nella pagina = prova fallita

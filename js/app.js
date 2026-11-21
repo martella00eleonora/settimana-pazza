@@ -823,6 +823,8 @@
     root.id = "cer"; root.className = "cer"; root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Chiusura ufficiale");
     root.innerHTML = `<canvas id="fw" aria-hidden="true"></canvas><button class="cer-audio" id="cer-audio" type="button" data-audio="1"></button><div class="cer-in" id="cer-in"></div>`;
     document.body.appendChild(root);
+    /* la pagina sotto si nasconde e si blocca: sull'iPhone, mentre la barra di Safari cambia altezza, si vedeva da una striscia */
+    document.documentElement.classList.add("cer-open");
     keepAwake(true); audioBtn();
     renderCeremony();
     if (cer.step > 0){ startFireworks(); return; }
@@ -844,7 +846,7 @@
   function closeCeremony(){
     if (!cer) return;
     if (!cer.remote && (!cer.trial || cer.live) && S.online) db.sendCeremony({closed:true});
-    cancelAnimationFrame(cer.fw); $("cer")?.remove(); cer = null; keepAwake(wantAwake()); render();
+    cancelAnimationFrame(cer.fw); $("cer")?.remove(); document.documentElement.classList.remove("cer-open"); cer = null; keepAwake(wantAwake()); render();
   }
   /* pulsante dell'audio: chi guarda dal proprio telefono deve toccarlo una volta per sentire i suoni */
   function audioBtn(){

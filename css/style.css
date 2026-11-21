@@ -228,6 +228,9 @@ details.quick form{display:grid;gap:8px;margin-top:10px}
 .dir-card{border-radius:20px;padding:16px;border:1px solid var(--line)}
 .dir-list,.dir{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .cer{position:fixed;inset:0;z-index:60;background:radial-gradient(900px 600px at 50% 0,#1b3a62,#050b14 75%);overflow:auto;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+html.cer-open,html.cer-open body{overflow:hidden;overscroll-behavior:none;background:#050302}
+html.cer-open body>*:not(.cer):not(#toast-root){visibility:hidden}
+.cer{overscroll-behavior:contain}
 .cer canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 .cer-in{position:relative;max-width:640px;margin:0 auto;display:grid;gap:18px;justify-items:center;text-align:center}
 .cer-in h2{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,9vw,52px);margin:0;line-height:1.05;text-shadow:0 4px 0 var(--red-2)}
@@ -908,7 +911,7 @@ section.view > *{min-width:0}
 @keyframes duelL{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
 @keyframes duelR{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
 /* --- scena del vincitore: rullo di tamburi prima del nome (3 s) --- */
-.win-drum{position:fixed;inset:0;z-index:4;display:none;place-content:center;justify-items:center;gap:26px;text-align:center;padding:24px;
+.win-drum{position:fixed;inset:-80px 0;z-index:4;display:none;place-content:center;justify-items:center;gap:26px;text-align:center;padding:24px;
   background:radial-gradient(520px 420px at 50% 48%,#2a1e08,#050302 75%)}
 .wd-k{font-family:"Cinzel",Georgia,serif;font-weight:800;font-size:clamp(20px,6vw,28px);line-height:1.35;color:#fff3c4;max-width:16ch}
 .wd-ball{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;
@@ -918,7 +921,7 @@ section.view > *{min-width:0}
 .wd-dots i{width:10px;height:10px;border-radius:50%;background:var(--gold)}
 @media (prefers-reduced-motion:no-preference){
   .win-drum{display:grid;animation:drumOut .5s 2.6s ease-in forwards}
-  .win-drum::after{content:"";position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;animation:drumFlash .7s 2.5s ease-out forwards}
+  .win-drum::after{content:"";position:fixed;inset:-80px 0;background:#fff;opacity:0;pointer-events:none;animation:drumFlash .7s 2.5s ease-out forwards}
   .wd-k{animation:fadeUp .6s both}
   .wd-ball{animation:drumShake 2.6s cubic-bezier(.5,0,.9,.5) forwards}
   .wd-dots i{animation:twinkle .6s ease-in-out infinite}
